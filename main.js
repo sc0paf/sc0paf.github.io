@@ -40,7 +40,8 @@ const buildings = {
 const player = {
     money: 15,
     iterationSpeed: 1000,
-    activeSquares: ['a','b'],
+    activeSquares: ['a'],
+    drawnLayers: [],
     squares: {
         a: [],
         b: [],
@@ -69,6 +70,8 @@ function newInit() {
 
     // draw all active squares on each active layer
     player.activeSquares.forEach((layer) => {
+        if (player.drawnLayers.includes(layer)) { return }
+        player.drawnLayers.push(layer)
         squaresEl[layer].forEach((element) => {
             document.getElementById(element.id).classList.add('active')
             let newSpan = document.createElement('span')
@@ -84,6 +87,7 @@ function newInit() {
             }
             // push array to layer on player object
             player.squares[layer].push(newPlayerSquare)
+
             
             // set the first squares
             squaresEl[layer][0].style.backgroundColor = 'black'
@@ -93,6 +97,12 @@ function newInit() {
 }
 
 newInit()
+
+function reInit() {
+    if (player.activeSquares.includes('b')) { player.activeSquares.push('c') }
+    else {player.activeSquares.push('b') }
+    newInit()
+}
 
 
 function buyBuilding(key, square) {

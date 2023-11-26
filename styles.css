@@ -187,3 +187,8 @@ html, body {
 .active {
     border: 1px dashed #ccc;
 }
+
+.addLayer {
+    cursor: pointer;
+    user-select: none;
+}
