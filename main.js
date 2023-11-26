@@ -2,8 +2,7 @@ const cardHeader = document.getElementById('cardHeader')
 const cardBody = document.getElementById('cardBody')
 const cardPopUp = document.getElementById('cardDisplay')
 const moneySpan = document.getElementById('moneySpan')
-
-// find sq by name     const square = player.squares[which].find(obj => obj.id === id)
+const squaresEl = {}
 
 // game data
 const buildings = {
@@ -13,12 +12,12 @@ const buildings = {
         cost: 5,
         upgrades: {
             output: {
-                id: 'Output',
+                name: 'Output',
                 description: 'Doubles the amount generated',
                 cost: 25
             },
             crit: {
-                id: 'Crit',
+                name: 'Crit',
                 description: 'Adds a small chance to gain 3x.',
                 cost: 25
             }
@@ -36,16 +35,20 @@ const buildings = {
     }
 }
 
+
+// player data
 const player = {
     money: 15,
     iterationSpeed: 1000,
-    activeSquares: ['a', 'b'],
+    activeSquares: ['a','b'],
     squares: {
         a: [],
-        b: []
+        b: [],
+        c: []
     }
 }
 
+// build array of squares
 function generateSquaresArray(prefix, count) {
     const squares = []
     for (let i = 0; i < count; i++) {
@@ -54,66 +57,54 @@ function generateSquaresArray(prefix, count) {
     return squares
 }
 
-const squaresA = generateSquaresArray('a',8)
-const squaresB = generateSquaresArray('b',16)
-const squaresC = generateSquaresArray('c',24)
-
-squaresA[0].style.backgroundColor = 'black'
-squaresA[0].style.color = 'white'
-
-let iterator = 1
-let iteratorB = 1
-let iteratorC = 1
-
-function init() {
+// setup
+function newInit() {
+    // set money
     moneySpan.innerHTML = `$${player.money}`
-    if (player.activeSquares.includes('a')) {
-        // Draw the board for A
-        squaresA.forEach((element) => {
+
+    // build arrays based on active layers
+    player.activeSquares.forEach((element, index) => {
+        squaresEl[element] = generateSquaresArray(element, 8 * (index + 1))       
+    })
+
+    // draw all active squares on each active layer
+    player.activeSquares.forEach((layer) => {
+        squaresEl[layer].forEach((element) => {
+            document.getElementById(element.id).classList.add('active')
             let newSpan = document.createElement('span')
             newSpan.appendChild(document.createTextNode(`[ ${element.id} ]`))
             newSpan.classList.add('squareSel')
             newSpan.addEventListener('click', () => {
-                selectSquare('a', element.id)
+                selectSquare(layer, element.id)
             })
             element.appendChild(newSpan)
             let newPlayerSquare = {
                 id: element.id,
                 type: 'None'
             }
-            player.squares.a.push(newPlayerSquare)
-        })        
-    }
-    if(player.activeSquares.includes('b')) {
-        squaresB.forEach((element) => {
-            let newSpan = document.createElement('span')
-            newSpan.appendChild(document.createTextNode(`[ ${element.id} ]`))
-            newSpan.classList.add('squareSel')
-            newSpan.addEventListener('click', () => {
-                selectSquare('b', element.id)
-            })
-            element.appendChild(newSpan)
-            let newPlayerSquare = {
-                id: element.id,
-                type: 'None'
-            }
-            player.squares.b.push(newPlayerSquare)
+            // push array to layer on player object
+            player.squares[layer].push(newPlayerSquare)
+            
+            // set the first squares
+            squaresEl[layer][0].style.backgroundColor = 'black'
+            squaresEl[layer][0].style.color = 'white'
         })
-    }
+    })
 }
 
-init()
+newInit()
+
 
 function buyBuilding(key, square) {
-    //key is Generator and square is a0
-    //console.log(`key is ${key} and square is ${square}`)
-    if (player.money < buildings[key].cost) return
-    let row = square.charAt(0)
-    let indexOfSquare = player.squares[row].findIndex(squares => squares.id === square)
-    console.log(player.squares[row][indexOfSquare].type)
-    if (player.squares[row][indexOfSquare].type !== 'None') return
 
+    if (player.money < buildings[key].cost) return
+    let layer = square.charAt(0)
+    let indexOfSquare = player.squares[layer].findIndex(squares => squares.id === square)
+    if (player.squares[layer][indexOfSquare].type !== 'None') return
+
+    // TODO : clean this up so it works for any building? or build out the rest.
     if (key === 'Generator') {
+        // buy a generator
         let squareDiv = document.getElementById(square)
         let newDiv = document.createElement('div')
         newDiv.appendChild(document.createTextNode('G'))
@@ -126,100 +117,125 @@ function buyBuilding(key, square) {
         }       
     }
     // redraw the card IG
-    drawSquareBody(row, square)
+    drawCard(layer, square)
 }
 
 
 function selectSquare(which, id) {
+    // show & position card, then draw.
     cardPopUp.style.display = 'block'
     cardPopUp.style.top = (event.pageY + cardPopUp.clientHeight / 2) + 'px';
     cardPopUp.style.left = (event.pageX + cardPopUp.clientWidth / 2) + 'px';
-    //console.log(`which is ${which} and id is ${id}`)
-    drawSquareBody(which, id)
+    drawCard(which, id)
 }
 
-function drawSquareBody(which, id) {
+
+function closeSquare() {
+    // close card -- Move into selectSquare?
+    cardPopUp.style.display = 'none'    
+}
+
+function drawCardButton(obj) {
+    // generic card button
+    let newButton = document.createElement('button')
+    let title = document.createElement('strong')
+    title.appendChild(document.createTextNode(obj.name))
+    newButton.appendChild(title)
+    newButton.appendChild(document.createElement('br'))
+    let costText = document.createElement('em')
+    costText.appendChild(document.createTextNode(`Cost : $${obj.cost}`))
+    newButton.appendChild(costText)
+    newButton.appendChild(document.createElement('br'))
+    newButton.appendChild(document.createTextNode(obj.description))
+    newButton.classList.add('cardButtons')
+
+    return newButton
+}
+
+function drawCardBody(title, underText) {
+
+    // generic card heading
+    let frag = document.createDocumentFragment()
+    let cardName = document.createElement('strong')
+    cardName.appendChild(document.createTextNode(title))
+    frag.appendChild(cardName)
+    frag.appendChild(document.createElement('br'))
+    let buttonsHeader = document.createElement('span')
+    buttonsHeader.appendChild(document.createTextNode(underText))
+    buttonsHeader.style.textDecoration = 'underline'
+    frag.appendChild(buttonsHeader)
+
+    return frag   
+}
+
+function drawCard(which, id) {
+    // why is this 3 different functions?? consolidate?
     cardHeader.innerHTML = ''
     cardBody.innerHTML = ''
     // select the square in the player object
     const square = player.squares[which].find(obj => obj.id === id)
     cardHeader.innerHTML = id
-    if (square.type === 'Generator') {
-        //TODO: GENERATOR LOGIC
-        let topBody = document.createElement('strong')
-        topBody.appendChild(document.createTextNode('Generator'))
-        cardBody.appendChild(topBody)
-        cardBody.appendChild(document.createElement('br'))
-        let headText = document.createElement('span')
-        headText.appendChild(document.createTextNode('Upgrades'))
-        headText.style.textDecoration = 'underline'
-        cardBody.appendChild(headText)
 
+    //todo: seperate this out into gameData to reuse
+    if (square.type === 'Generator') {
+
+        // using generic heading.. 
+        cardBody.appendChild(drawCardBody('Generator', 'Upgrades'))
+
+        // draw buttons
         for (const key in buildings.Generator.upgrades) {
-            
-        }
-        
+            let upgradeButton = drawCardButton(buildings.Generator.upgrades[key])
+            upgradeButton.addEventListener('click', () => {
+                console.log(buildings.Generator.upgrades[key].name)
+            })
+            cardBody.appendChild(upgradeButton)
+
+        }        
     } else {
-        let topBody = document.createElement('span')
-        topBody.appendChild(document.createTextNode('Nothing here..'))
-        cardBody.appendChild(topBody)
+        // blank card
+        cardBody.appendChild(drawCardBody('Nothing Here...', 'Build'))
+
         for (const key in buildings) {
-            let buildingButton = document.createElement('button')
-            let title = document.createElement('strong')
-            title.appendChild(document.createTextNode(buildings[key].name))
-            buildingButton.appendChild(title)
-            buildingButton.appendChild(document.createElement('br'))
-            let cost = document.createElement('em')
-            cost.appendChild(document.createTextNode(`Cost : $${buildings[key].cost}`))
-            buildingButton.appendChild(cost)
-            buildingButton.appendChild(document.createElement('br'))
-            let description = document.createTextNode(buildings[key].description)
-            buildingButton.appendChild(description)
-            buildingButton.classList.add('cardButtons')
-            buildingButton.addEventListener('click', () => {
+            let buildButton = drawCardButton(buildings[key])
+            buildButton.addEventListener('click', () => {
                 buyBuilding(buildings[key].name,square.id)
             })
-            cardBody.appendChild(buildingButton)
+            cardBody.appendChild(buildButton)
         }
     }
 }
 
-function closeSquare() {
-    cardPopUp.style.display = 'none'    
+// this feels stupid. Add to game data? or player? is saving spot on board really important? prob not.
+let counter = {
+    a: 1,
+    b: 1,
+    c: 1
 }
 
-const theLoop = setInterval(() => {
-    let currentSelectionA = squaresA[iterator];
-    if (player.activeSquares.includes('b')) {
-        currentSelectionB = squaresB[iteratorB];
+const gmLoop = setInterval(() => {
 
-        let lastSelectionB = squaresB[(iteratorB - 1 + squaresB.length) % squaresB.length]
-        if (lastSelectionB) {
-            lastSelectionB.style.backgroundColor = 'white'
-            lastSelectionB.style.color = 'black'
+    player.activeSquares.forEach((layer) => {
+
+        let currentSelection = squaresEl[layer][counter[layer]]
+        let lastSelection = squaresEl[layer][(counter[layer] - 1 + squaresEl[layer].length) % squaresEl[layer].length]
+
+        if (lastSelection) {
+            lastSelection.style.backgroundColor = 'white'
+            lastSelection.style.color = 'black'
         }
 
-        currentSelectionB.style.backgroundColor = 'black'
-        currentSelectionB.style.color = 'white'
-        iteratorB = (iteratorB + 1) % squaresB.length
-                
-    }
-    let lastSelection = squaresA[(iterator - 1 + squaresA.length) % squaresA.length];
-    
-    // Reset styles for the last selection
-    if (lastSelection) {
-        lastSelection.style.backgroundColor = 'white';
-        lastSelection.style.color = 'black';
-    }
+        currentSelection.style.backgroundColor = 'black'
+        currentSelection.style.color = 'white'
 
-    // Apply styles for the current selection
-    currentSelectionA.style.backgroundColor = 'black';
-    currentSelectionA.style.color = 'white';
-    if(player.squares.a[iterator].type === 'Generator') {       
-        player.money += player.squares.a[iterator].amount
-    }
-    moneySpan.innerHTML = `$${player.money}`
+        moneySpan.innerHTML = `$${player.money}`
 
-    iterator = (iterator + 1) % squaresA.length;
-    
+        counter[layer] = (counter[layer] + 1) % squaresEl[layer].length
+
+        if (player.squares[layer][counter[layer]].type === 'Generator') {
+            player.money += player.squares[layer][counter[layer]].amount
+        }
+    })
+
 }, player.iterationSpeed)
+
+
