@@ -115,6 +115,7 @@ html, body {
 
 .cat {
     vertical-align: middle;
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -125,6 +126,7 @@ html, body {
     user-select: none;
     cursor: pointer;
 }
+
 
 .squareSel:hover {
     text-decoration: underline;

@@ -46,7 +46,7 @@ const player = {
         b: [],
         c: []
     }
-}
+};
 
 // build array of squares
 function generateSquaresArray(prefix, count) {
