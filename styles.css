@@ -192,3 +192,45 @@ html, body {
     cursor: pointer;
     user-select: none;
 }
+
+
+.money-generator {
+    position: relative;
+}
+
+.money-increase {
+    position: absolute;
+    font-size: 1.5em;
+    color: green;
+    animation: floatUp 1.5s ease-out;
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+}
+
+.coin {
+    width: 16px;
+    height: 16px;
+    background-image: url('assets/fullcoin.png');
+}
+
+.animate-rotation {
+    animation: rotateCoin 1s steps(8) infinite;
+}
+
+@keyframes rotateCoin {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -128px 0;
+    }
+}

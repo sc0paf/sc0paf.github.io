@@ -4,7 +4,10 @@ const cardPopUp = document.getElementById('cardDisplay')
 const moneySpan = document.getElementById('moneySpan')
 const squaresEl = {}
 
+/// Figure out how to add cost multipliers ... probably have to redo drawbutton to use cost multipliers of some sort.
 // game data
+
+
 const buildings = {
     Generator: {
         name: 'Generator',
@@ -35,12 +38,31 @@ const buildings = {
     }
 }
 
+const boardUpgrades = {
+    gameSpeed: {
+        name: 'Game Speed',
+        description: 'Squares move along quicker.',
+        cost: 100,
+        levelMulti: 1.2
+    }
+}
+
 
 // player data
 const player = {
     money: 15,
     iterationSpeed: 1000,
+    iterationSpeeds: {
+        a: 1000,
+        b: 1000,
+        c: 1000
+    },
     activeSquares: ['a'],
+    layerModifiers: {
+        a: 1,
+        b: 1,
+        c: .5
+    },
     drawnLayers: [],
     squares: {
         a: [],
@@ -48,6 +70,12 @@ const player = {
         c: []
     }
 };
+
+let currentSquare = {
+    a: 0,
+    b: 0,
+    c: 0
+}
 
 // build array of squares
 function generateSquaresArray(prefix, count) {
@@ -98,6 +126,17 @@ function newInit() {
 
 newInit()
 
+function addLayer() {
+    let nextLayer = String.fromCharCode(player.activeSquares.length + 97)
+    let newCost = (boardUpgrades.gameSpeed.cost + (boardUpgrades.gameSpeed.cost * 1.2) ** player.activeSquares.length)
+    console.log(newCost)
+    if (player.money < boardUpgrades.gameSpeed.cost) return
+    player.money -= boardUpgrades.gameSpeed.cost
+    player.activeSquares.push(nextLayer)
+    newInit()
+    selectSquare('boardUpgrades',0)
+}
+
 function reInit() {
     if (player.activeSquares.includes('b')) { player.activeSquares.push('c') }
     else {player.activeSquares.push('b') }
@@ -106,7 +145,6 @@ function reInit() {
 
 
 function buyBuilding(key, square) {
-
     if (player.money < buildings[key].cost) return
     let layer = square.charAt(0)
     let indexOfSquare = player.squares[layer].findIndex(squares => squares.id === square)
@@ -117,8 +155,10 @@ function buyBuilding(key, square) {
         // buy a generator
         let squareDiv = document.getElementById(square)
         let newDiv = document.createElement('div')
-        newDiv.appendChild(document.createTextNode('G'))
+        newDiv.classList.add('coin')
+        newDiv.id = `coin${square}`
         squareDiv.appendChild(newDiv)
+        //     animation: rotateCoin 1s steps(8) infinite;
         player.money -= buildings.Generator.cost
         player.squares.a[indexOfSquare] = {
             id: square,
@@ -183,6 +223,27 @@ function drawCard(which, id) {
     cardHeader.innerHTML = ''
     cardBody.innerHTML = ''
     // select the square in the player object
+    if (which === 'boardUpgrades') {
+        cardHeader.innerHTML = `Board`
+        
+        let buttonsHeader = document.createElement('span')
+        buttonsHeader.appendChild(document.createTextNode(`Upgrades`))
+        buttonsHeader.style.textDecoration = 'underline'
+        cardBody.appendChild(buttonsHeader)
+
+        for (const key in boardUpgrades) {
+            let upgradeButton = drawCardButton(boardUpgrades[key])
+            upgradeButton.addEventListener('click', () => {
+                addLayer()
+            })
+            cardBody.appendChild(upgradeButton)
+        }
+        
+        
+
+        return
+    }
+
     const square = player.squares[which].find(obj => obj.id === id)
     cardHeader.innerHTML = id
 
@@ -222,10 +283,64 @@ let counter = {
     c: 1
 }
 
-const gmLoop = setInterval(() => {
+let countMod = {
+    a: 0,
+    b: 0,
+    c: 0
+}
+
+function findNeighbors(target) {
+    const layer = target.charCodeAt(0) - 96
+    const layerUp = String.fromCharCode(layer + 97)
+    if (!player.activeSquares.includes(layerUp)) return false
+    const layerDown = String.fromCharCode(layer + 95)
+    const num = +target.slice(1)
+
+    const modulo = layer * 2
+
+    const side = Math.floor(num / modulo)
+    const upLayerNum = num + 1 + 2 * side
+    const adjs = [`${layerUp}${upLayerNum}`]
+
+    // corner or edge?
+    const isCornerCase = !(num % modulo)
+
+    if (isCornerCase) {
+        //corner case
+        const upLayerLength = 8 * (layer + 1)
+        adjs.push(`${layerUp}${(upLayerNum + upLayerLength - 2) % upLayerLength}`)
+    } else if (layer !== 1) {
+      // Edge case
+      const downLayerLength = 8 * (layer - 1)
+      adjs.unshift(`${layerDown}${(num - 1 - 2 * side) % downLayerLength}`)
+    }
+  
+    return adjs
+}
+
+
+
+
+
+function playMoneyAnimation(el, amount) {
+    let increaseAnimation = document.createElement('div')
+    increaseAnimation.className = 'money-increase'
+    increaseAnimation.textContent = `+$${amount}`
+    el.appendChild(increaseAnimation)
+    setTimeout(() => {
+        el.removeChild(increaseAnimation)
+    },1500)
+}
+
+
+
+let gmLoop = setInterval(() => {
 
     player.activeSquares.forEach((layer) => {
-
+        countMod[layer] += player.layerModifiers[layer]
+        if (countMod[layer] < 1) return
+        countMod[layer] = 0
+        
         let currentSelection = squaresEl[layer][counter[layer]]
         let lastSelection = squaresEl[layer][(counter[layer] - 1 + squaresEl[layer].length) % squaresEl[layer].length]
 
@@ -237,15 +352,27 @@ const gmLoop = setInterval(() => {
         currentSelection.style.backgroundColor = 'black'
         currentSelection.style.color = 'white'
 
+        let neighbors = findNeighbors(`${layer}${counter[layer]}`)
+        
+        if (neighbors) {console.log(neighbors)}
+
+        if (player.squares[layer][counter[layer]].type === 'Generator') {
+
+
+            player.money += player.squares[layer][counter[layer]].amount
+            playMoneyAnimation(squaresEl[layer][counter[layer]], player.squares[layer][counter[layer]].amount)
+            let div = document.getElementById(`coin${layer}${counter[layer]}`)
+            div.classList.add('animate-rotation')
+            
+            setTimeout(() => {
+               div.classList.remove('animate-rotation')
+            },1000)
+        }
+
         moneySpan.innerHTML = `$${player.money}`
 
         counter[layer] = (counter[layer] + 1) % squaresEl[layer].length
-
-        if (player.squares[layer][counter[layer]].type === 'Generator') {
-            player.money += player.squares[layer][counter[layer]].amount
-        }
     })
-
 }, player.iterationSpeed)
 
 
