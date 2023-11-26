@@ -39,7 +39,7 @@ const buildings = {
 const player = {
     money: 15,
     iterationSpeed: 1000,
-    activeSquares: ['a'],
+    activeSquares: ['a', 'b'],
     squares: {
         a: [],
         b: []
