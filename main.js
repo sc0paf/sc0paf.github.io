@@ -16,12 +16,12 @@ const buildings = {
         upgrades: {
             output: {
                 name: 'Output',
-                description: 'Doubles the amount generated',
+                description: 'Doubles the amount generated (not implemented.)',
                 cost: 25
             },
             crit: {
                 name: 'Crit',
-                description: 'Adds a small chance to gain 3x.',
+                description: 'Adds a small chance to gain 3x. (not implemented.)',
                 cost: 25
             }
         }
@@ -33,19 +33,19 @@ const buildings = {
         upgrades: {
             place: {
                 name: 'place',
-                description: 'placeholder',
+                description: 'placeholder (not implemented.)',
                 cost: 25
             },
             place2: {
                 name: 'place2',
-                description: 'placeholdre2',
+                description: 'placeholdre2 (not implemented.)',
                 cost: 100
             }
         }
     },
     Reverse: {
         name: 'Reverse',
-        description: 'Reverses direction when hitting this square.',
+        description: 'Reverses direction when hitting this square. (not implemented.)',
         cost: 25
     }
 }
@@ -53,7 +53,7 @@ const buildings = {
 const boardUpgrades = {
     gameSpeed: {
         name: 'Game Speed',
-        description: 'Squares move along quicker.',
+        description: 'Squares move along quicker. (not implemented.)',
         cost: 100,
         levelMulti: 1.2
     },
@@ -442,5 +442,3 @@ let gmLoop = setInterval(() => {
         counter[layer] = (counter[layer] + 1) % squaresEl[layer].length
     })
 }, player.iterationSpeed)
-
-
