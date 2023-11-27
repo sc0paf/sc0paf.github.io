@@ -29,7 +29,19 @@ const buildings = {
     Multi: {
         name: 'Multi',
         description: 'Multiplies the next square.',
-        cost: 10
+        cost: 10,
+        upgrades: {
+            place: {
+                name: 'place',
+                description: 'placeholder',
+                cost: 25
+            },
+            place2: {
+                name: 'place2',
+                description: 'placeholdre2',
+                cost: 100
+            }
+        }
     },
     Reverse: {
         name: 'Reverse',
@@ -62,6 +74,11 @@ const player = {
         a: 1000,
         b: 1000,
         c: 1000
+    },
+    layerMultis: {
+        a: 1,
+        b: 1,
+        c: 1
     },
     activeSquares: ['a'],
     layerModifiers: {
@@ -155,7 +172,6 @@ function buyBuilding(key, square) {
     let layer = square.charAt(0)
     let indexOfSquare = player.squares[layer].findIndex(squares => squares.id === square)
     if (player.squares[layer][indexOfSquare].type !== 'None') return
-
     // TODO : clean this up so it works for any building? or build out the rest.
     if (key === 'Generator') {
         // buy a generator
@@ -164,13 +180,27 @@ function buyBuilding(key, square) {
         newDiv.classList.add('coin')
         newDiv.id = `coin${square}`
         squareDiv.appendChild(newDiv)
-        //     animation: rotateCoin 1s steps(8) infinite;
+
         player.money -= buildings.Generator.cost
-        player.squares.a[indexOfSquare] = {
+        player.squares[layer][indexOfSquare] = {
             id: square,
             type: 'Generator',
             amount: 2
         }       
+    } else if (key === 'Multi') {
+        console.log(key)
+        //buy a multiplier
+        let squareDiv = document.getElementById(square)
+        let newDiv = document.createElement('div')
+        newDiv.appendChild(document.createTextNode('✖'))
+        squareDiv.appendChild(newDiv)
+
+        player.money -= buildings.Multi.cost
+        player.squares[layer][indexOfSquare] = {
+            id: square,
+            type: 'Multi',
+            amount: 1.5
+        }
     }
     // redraw the card IG
     drawCard(layer, square)
@@ -277,6 +307,18 @@ function drawCard(which, id) {
             cardBody.appendChild(upgradeButton)
 
         }        
+    } else if (square.type === 'Multi') {
+        cardBody.appendChild(drawCardBody('Multi', 'Upgrades'))
+
+        // draw buttons
+        for (const key in buildings.Multi.upgrades) {
+            let upgradeButton = drawCardButton(buildings.Multi.upgrades[key])
+            upgradeButton.addEventListener('click', () => {
+                console.log(buildings.Multi.upgrades[key].name)
+            })
+            cardBody.appendChild(upgradeButton)
+
+        }     
     } else {
         // blank card
         cardBody.appendChild(drawCardBody('Nothing Here...', 'Build'))
@@ -378,16 +420,21 @@ let gmLoop = setInterval(() => {
         if (neighbors) {console.log(neighbors)}
 
         if (player.squares[layer][counter[layer]].type === 'Generator') {
+            console.log(player.layerMultis[layer])
 
+            player.money += player.squares[layer][counter[layer]].amount * player.layerMultis[layer]
 
-            player.money += player.squares[layer][counter[layer]].amount
-            playMoneyAnimation(squaresEl[layer][counter[layer]], player.squares[layer][counter[layer]].amount)
+            playMoneyAnimation(squaresEl[layer][counter[layer]], player.squares[layer][counter[layer]].amount * player.layerMultis[layer])
+            player.layerMultis[layer] = 1
             let div = document.getElementById(`coin${layer}${counter[layer]}`)
             div.classList.add('animate-rotation')
             
             setTimeout(() => {
                div.classList.remove('animate-rotation')
             },1000)
+        } else if (player.squares[layer][counter[layer]].type === 'Multi') {
+            console.log(`multi`)
+            player.layerMultis[layer] = 1.5
         }
 
         moneySpan.innerHTML = `$${player.money}`
