@@ -1,4 +1,5 @@
 html, body {
+    font-family: monospace;
     height: 100%;
     margin: 0;
 }
@@ -10,7 +11,7 @@ html, body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: repeat(7, 1fr);
-    gap: 0px 0px;
+    gap: 2px 2px;
     grid-auto-flow: row;
   }
   
@@ -115,7 +116,6 @@ html, body {
 
 .cat {
     vertical-align: middle;
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -129,7 +129,6 @@ html, body {
 
 
 .squareSel:hover {
-    text-decoration: underline;
     font-size: 115%;
     text-shadow: 1px 1px 1px black;
 }
@@ -143,11 +142,12 @@ html, body {
     width: 200px;
     height: auto;
     background-color: white;
-    border: 1px solid rgb(236 236 236);
+    border: 2px solid rgb(190, 190, 190);
     border-radius: 5px;
     padding: 0;
+    padding-bottom: 1rem;
     margin: 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
 }
 
 .cardHeader {
@@ -155,6 +155,7 @@ html, body {
     border-bottom: 1px solid rgb(236 236 236);
     font-weight: bold;
     text-shadow: 1px 1px 2px #ccc;
+    padding-bottom: .5rem;
 }
 
 #cardBody { 
@@ -167,6 +168,7 @@ html, body {
 .cardButtons {
     margin-top: 5px;
     width: 95%;
+    box-shadow: 2px 2px 2px #ccc;
 }
 
 .display {
@@ -183,15 +185,24 @@ html, body {
     user-select: none;
 }
 
+.boardUpgrades:hover {
+    font-size: 115%;
+    font-weight: bold;
+}
 
 .active {
-    border: 1px dashed #ccc;
+    background-color: rgb(235, 235, 235);
+    transition: all .2s ease-in-out;
+    border-top: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-right: 2px solid #ccc;
+    border-bottom: 2px solid #ccc;
+    box-shadow: 2px 2px 4px rgb(54, 54, 54);
+    margin: 0px 0px 0px 0px;
+
 }
 
-.addLayer {
-    cursor: pointer;
-    user-select: none;
-}
+
 
 
 .money-generator {
@@ -201,8 +212,9 @@ html, body {
 .money-increase {
     position: absolute;
     font-size: 1.5em;
-    color: green;
-    animation: floatUp 1.5s ease-out;
+    font-weight: bolder;
+    color: rgb(0, 227, 0);
+    animation: floatUp 3s ease-out;
 }
 
 @keyframes floatUp {

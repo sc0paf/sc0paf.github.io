@@ -44,6 +44,12 @@ const boardUpgrades = {
         description: 'Squares move along quicker.',
         cost: 100,
         levelMulti: 1.2
+    },
+    boardSize: {
+        name: 'Add Layer',
+        description: 'Add another layer to the grid.',
+        cost: 50,
+        levelMulti: 1.2
     }
 }
 
@@ -218,6 +224,14 @@ function drawCardBody(title, underText) {
     return frag   
 }
 
+function buyBoardUpgrade(upgrade) {
+    if (upgrade.name === 'Game Speed') {
+        return
+    } else if (upgrade.name === 'Add Layer') {
+        addLayer()
+    }
+}
+
 function drawCard(which, id) {
     // why is this 3 different functions?? consolidate?
     cardHeader.innerHTML = ''
@@ -234,7 +248,8 @@ function drawCard(which, id) {
         for (const key in boardUpgrades) {
             let upgradeButton = drawCardButton(boardUpgrades[key])
             upgradeButton.addEventListener('click', () => {
-                addLayer()
+                // create the thing bitch!
+                buyBoardUpgrade(boardUpgrades[key])
             })
             cardBody.appendChild(upgradeButton)
         }
@@ -319,9 +334,6 @@ function findNeighbors(target) {
 }
 
 
-
-
-
 function playMoneyAnimation(el, amount) {
     let increaseAnimation = document.createElement('div')
     increaseAnimation.className = 'money-increase'
@@ -345,12 +357,21 @@ let gmLoop = setInterval(() => {
         let lastSelection = squaresEl[layer][(counter[layer] - 1 + squaresEl[layer].length) % squaresEl[layer].length]
 
         if (lastSelection) {
-            lastSelection.style.backgroundColor = 'white'
+            lastSelection.style.backgroundColor = 'rgb(235, 235, 235)'
             lastSelection.style.color = 'black'
+            lastSelection.style.boxShadow = '2px 2px 4px rgb(54, 54, 54)'
+            lastSelection.style.marginLeft = '0px'
+            lastSelection.style.borderRight = '2px solid #ccc'
+            lastSelection.style.borderBottom = '2px solid #ccc'
         }
 
-        currentSelection.style.backgroundColor = 'black'
+        currentSelection.style.backgroundColor = 'rgb(24, 24, 24)'
         currentSelection.style.color = 'white'
+        currentSelection.style.boxShadow = 'inset 2px 2px 2px #ccc'
+        currentSelection.style.marginLeft = '1px'
+        currentSelection.style.borderRight = '3px solid black'
+        currentSelection.style.borderBottom = '3px solid black'
+
 
         let neighbors = findNeighbors(`${layer}${counter[layer]}`)
         
