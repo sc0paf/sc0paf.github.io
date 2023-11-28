@@ -2,6 +2,7 @@ html, body {
     font-family: monospace;
     height: 100%;
     margin: 0;
+    position: relative;
 }
 
 .container {  
@@ -11,9 +12,32 @@ html, body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: repeat(7, 1fr);
-    gap: 2px 2px;
+    gap: 1.5rem;
     grid-auto-flow: row;
   }
+
+
+#floating-square {
+    padding: 5px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    height: auto;
+    background-color: #3498db;
+    color: #fff;
+    text-align: center;
+    font-size: smaller;
+    /* line-height: 50px; */
+    cursor: pointer;
+    z-index: 999; /* Ensure the square appears on top of other elements */
+    border: 2px solid black;
+}
+
+.colorBox {
+    width: 25%;
+    font-size: .5rem;
+}
   
   .a0 { grid-area: 3 / 3 / 4 / 4; }
   
@@ -128,9 +152,9 @@ html, body {
 }
 
 
-.squareSel:hover {
-    font-size: 115%;
+.active:hover {
     text-shadow: 1px 1px 1px black;
+    transform: scale(1.1);
 }
 
 #cardDisplay {
@@ -197,8 +221,10 @@ html, body {
     border-left: 1px solid #ccc;
     border-right: 2px solid #ccc;
     border-bottom: 2px solid #ccc;
+    border-radius: 100%;
     box-shadow: 2px 2px 4px rgb(54, 54, 54);
     margin: 0px 0px 0px 0px;
+    cursor: pointer;
 
 }
 

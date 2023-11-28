@@ -42,3 +42,46 @@ const theLoop = setInterval(() => {
     iterator = (iterator + 1) % squaresEl.a.length;
     
 }, 500)
+
+
+
+
+
+
+
+
+
+
+
+
+ // /upgrades
+
+
+ if (square.type === 'Generator') {
+    // using generic heading.. 
+    cardBody.appendChild(drawCardBody('Generator', 'Upgrades'))
+
+    // draw buttons
+    for (const key in buildings.Generator.upgrades) {
+        let upgradeButton = drawCardButton(buildings.Generator.upgrades[key])
+        upgradeButton.addEventListener('click', () => {
+            console.log(buildings.Generator.upgrades[key].name)
+        })
+        cardBody.appendChild(upgradeButton)
+    }        
+} else if (square.type === 'Multi') {
+    cardBody.appendChild(drawCardBody('Multi', 'Upgrades'))
+
+    // draw buttons
+    for (const key in buildings.Multi.upgrades) {
+        let upgradeButton = drawCardButton(buildings.Multi.upgrades[key])
+        upgradeButton.addEventListener('click', () => {
+            console.log(buildings.Multi.upgrades[key].name)
+        })
+        cardBody.appendChild(upgradeButton)
+
+    }     
+} else {
+    // blank card
+
+}

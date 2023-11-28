@@ -2,11 +2,23 @@ const cardHeader = document.getElementById('cardHeader')
 const cardBody = document.getElementById('cardBody')
 const cardPopUp = document.getElementById('cardDisplay')
 const moneySpan = document.getElementById('moneySpan')
+const optionsEl = document.getElementById('floating-square')
 const squaresEl = {}
 
 /// Figure out how to add cost multipliers ... probably have to redo drawbutton to use cost multipliers of some sort.
 // game data
 
+function setColor(color) {
+    colorData[color] = document.getElementById('colorBoxA')
+
+
+}
+
+let colorData = {
+    a: '#ccc',
+    b: '',
+    c: ''
+}
 
 const buildings = {
     Generator: {
@@ -68,8 +80,8 @@ const boardUpgrades = {
 
 // player data
 const player = {
-    money: 15,
-    iterationSpeed: 1000,
+    money: 5000,
+    iterationSpeed: 350,
     iterationSpeeds: {
         a: 1000,
         b: 1000,
@@ -111,6 +123,7 @@ function generateSquaresArray(prefix, count) {
 
 // setup
 function newInit() {
+
     // set money
     moneySpan.innerHTML = `$${player.money}`
 
@@ -127,14 +140,16 @@ function newInit() {
             document.getElementById(element.id).classList.add('active')
             let newSpan = document.createElement('span')
             newSpan.appendChild(document.createTextNode(`[ ${element.id} ]`))
+
+            element.appendChild(newSpan)
             newSpan.classList.add('squareSel')
-            newSpan.addEventListener('click', () => {
+            element.addEventListener('click', () => {
                 selectSquare(layer, element.id)
             })
-            element.appendChild(newSpan)
             let newPlayerSquare = {
                 id: element.id,
-                type: 'None'
+                type: 'None',
+                neighbors: findNeighbors(element.id)
             }
             // push array to layer on player object
             player.squares[layer].push(newPlayerSquare)
@@ -150,6 +165,7 @@ function newInit() {
 newInit()
 
 function addLayer() {
+    let thisLayer = player.activeSquares[player.activeSquares.length - 1]
     let nextLayer = String.fromCharCode(player.activeSquares.length + 97)
     let newCost = (boardUpgrades.gameSpeed.cost + (boardUpgrades.gameSpeed.cost * 1.2) ** player.activeSquares.length)
     console.log(newCost)
@@ -158,6 +174,12 @@ function addLayer() {
     player.activeSquares.push(nextLayer)
     newInit()
     selectSquare('boardUpgrades',0)
+
+    console.log(thisLayer)
+    player.squares[thisLayer].forEach((element, index) => {
+        let thisSquare = `${thisLayer}${index}`
+        element.neighbors = findNeighbors(thisSquare)
+    })
 }
 
 function reInit() {
@@ -185,10 +207,10 @@ function buyBuilding(key, square) {
         player.squares[layer][indexOfSquare] = {
             id: square,
             type: 'Generator',
+            neighbors: findNeighbors(square),
             amount: 2
         }       
     } else if (key === 'Multi') {
-        console.log(key)
         //buy a multiplier
         let squareDiv = document.getElementById(square)
         let newDiv = document.createElement('div')
@@ -199,6 +221,7 @@ function buyBuilding(key, square) {
         player.squares[layer][indexOfSquare] = {
             id: square,
             type: 'Multi',
+            neighbors: findNeighbors(square),
             amount: 1.5
         }
     }
@@ -209,11 +232,14 @@ function buyBuilding(key, square) {
 
 function selectSquare(which, id) {
     // show & position card, then draw.
+    drawCard(which, id)
     cardPopUp.style.display = 'block'
     cardPopUp.style.top = (event.pageY + cardPopUp.clientHeight / 2) + 'px';
     cardPopUp.style.left = (event.pageX + cardPopUp.clientWidth / 2) + 'px';
-    drawCard(which, id)
+
+
 }
+
 
 
 function closeSquare() {
@@ -266,8 +292,9 @@ function drawCard(which, id) {
     // why is this 3 different functions?? consolidate?
     cardHeader.innerHTML = ''
     cardBody.innerHTML = ''
-    // select the square in the player object
+
     if (which === 'boardUpgrades') {
+        //board upgrades
         cardHeader.innerHTML = `Board`
         
         let buttonsHeader = document.createElement('span')
@@ -276,50 +303,24 @@ function drawCard(which, id) {
         cardBody.appendChild(buttonsHeader)
 
         for (const key in boardUpgrades) {
+
             let upgradeButton = drawCardButton(boardUpgrades[key])
+
             upgradeButton.addEventListener('click', () => {
-                // create the thing bitch!
                 buyBoardUpgrade(boardUpgrades[key])
             })
+
             cardBody.appendChild(upgradeButton)
         }
-        
-        
-
+        //idk run away  
         return
     }
 
     const square = player.squares[which].find(obj => obj.id === id)
     cardHeader.innerHTML = id
 
-    //todo: seperate this out into gameData to reuse
-    if (square.type === 'Generator') {
+    if (square.type === 'None') {
 
-        // using generic heading.. 
-        cardBody.appendChild(drawCardBody('Generator', 'Upgrades'))
-
-        // draw buttons
-        for (const key in buildings.Generator.upgrades) {
-            let upgradeButton = drawCardButton(buildings.Generator.upgrades[key])
-            upgradeButton.addEventListener('click', () => {
-                console.log(buildings.Generator.upgrades[key].name)
-            })
-            cardBody.appendChild(upgradeButton)
-
-        }        
-    } else if (square.type === 'Multi') {
-        cardBody.appendChild(drawCardBody('Multi', 'Upgrades'))
-
-        // draw buttons
-        for (const key in buildings.Multi.upgrades) {
-            let upgradeButton = drawCardButton(buildings.Multi.upgrades[key])
-            upgradeButton.addEventListener('click', () => {
-                console.log(buildings.Multi.upgrades[key].name)
-            })
-            cardBody.appendChild(upgradeButton)
-
-        }     
-    } else {
         // blank card
         cardBody.appendChild(drawCardBody('Nothing Here...', 'Build'))
 
@@ -329,6 +330,19 @@ function drawCard(which, id) {
                 buyBuilding(buildings[key].name,square.id)
             })
             cardBody.appendChild(buildButton)
+        }
+    } else {
+
+        //todo: seperate this out into gameData to reuse
+
+        cardBody.appendChild(drawCardBody(square.type, 'Upgrades'))
+
+        for (const key in buildings[square.type].upgrades) {
+            let upgradeButton = drawCardButton(buildings[square.type].upgrades[key])
+            upgradeButton.addEventListener('click', () => {
+                console.log(buildings[square.type].upgrades[key].name)
+            })
+            cardBody.appendChild(upgradeButton)
         }
     }
 }
@@ -402,25 +416,34 @@ let gmLoop = setInterval(() => {
             lastSelection.style.backgroundColor = 'rgb(235, 235, 235)'
             lastSelection.style.color = 'black'
             lastSelection.style.boxShadow = '2px 2px 4px rgb(54, 54, 54)'
-            lastSelection.style.marginLeft = '0px'
-            lastSelection.style.borderRight = '2px solid #ccc'
+            lastSelection.style.borderRight = `2px solid #ccc`
             lastSelection.style.borderBottom = '2px solid #ccc'
         }
 
         currentSelection.style.backgroundColor = 'rgb(24, 24, 24)'
         currentSelection.style.color = 'white'
         currentSelection.style.boxShadow = 'inset 2px 2px 2px #ccc'
-        currentSelection.style.marginLeft = '1px'
-        currentSelection.style.borderRight = '3px solid black'
-        currentSelection.style.borderBottom = '3px solid black'
 
 
         let neighbors = findNeighbors(`${layer}${counter[layer]}`)
         
-        if (neighbors) {console.log(neighbors)}
+        if (neighbors) {
+            //console.log(neighbors)
+        }
 
         if (player.squares[layer][counter[layer]].type === 'Generator') {
-            console.log(player.layerMultis[layer])
+
+            let higherLayerActive = String.fromCharCode(layer.charCodeAt(0) + 1)
+            if (player.activeSquares.includes(higherLayerActive)) {
+                // counter[higherLayerActive] = current square of layer+1
+                let thisSquare = `${layer}${counter[layer]}`
+                let thatSquare = `${higherLayerActive}${counter[higherLayerActive]}`
+                let thatType = player.squares[higherLayerActive][counter[higherLayerActive]].type
+                if (thisSquare === thatType) {
+                    console.log(`we did it!!!!!!!!!`)
+                }
+            }
+            
 
             player.money += player.squares[layer][counter[layer]].amount * player.layerMultis[layer]
 
