@@ -12,7 +12,6 @@ const squaresEl = {}
 
 function setColor(color) {
     colorData[color] = document.getElementById('colorBoxA')
-
 }
 
 let colorData = {
@@ -121,6 +120,8 @@ function generateSquaresArray(prefix, count) {
     }
     return squares
 }
+
+
 
 // setup
 function newInit() {

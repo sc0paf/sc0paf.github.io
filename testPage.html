@@ -10,17 +10,29 @@
             display: grid;
             grid-template-rows: repeat(3, 1fr);
             grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
+            gap: 10px;
             width: 100%;
             height: 100vh;         
         }
 
         .grid-item {
             border: 1px solid #ccc;
-            padding: 10px;
             text-align: center;
-            width: 100%;
-            height: 100%;
+            width: 85%;
+            height: 85%;
+        }
+
+        .active {
+            background-color: rgb(235, 235, 235);
+            transition: all .2s ease-in-out;
+            border-top: 1px solid #ccc;
+            border-left: 1px solid #ccc;
+            border-right: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            border-radius: 100%;
+            box-shadow: 2px 2px 4px rgb(54, 54, 54);
+            margin: 0px 0px 0px 0px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -30,14 +42,20 @@
 
     <script>
 
-var url_string = window.location;
-var url = new URL(url_string);
-var gSize = url.searchParams.get("gSize");
+    document.addEventListener("DOMContentLoaded", function() {
+      const url_string = window.location;
+      const url = new URL(url_string);
+      const gSize = url.searchParams.get("gSize");
+
+      const arbLength = parseInt(gSize, 10) || 5; // Default to 5 if gSize is not provided
+
+      const gridElement = document.getElementById('grid-Container');
+      createGrid(arbLength);
+    });
 
 
-    console.log(gSize)
 
-        let arbLength = 23
+        let arbLength = 9
         const gridElement = document.getElementById('grid-Container')
         let count = 0
 
@@ -57,10 +75,10 @@ var gSize = url.searchParams.get("gSize");
         }
 
 
-
         function makeASquare(area, id) {
             let newSquare = document.createElement('div')
                 newSquare.classList.add('grid-item')
+                newSquare.classList.add('active')
                 newSquare.style.gridArea = area
                 newSquare.textContent = id
                 newSquare.id = id
@@ -87,6 +105,7 @@ var gSize = url.searchParams.get("gSize");
 
                 // top
                 for (let top = 1; top < thisLayerLength; top++) {
+                    console.log(`draw top`)
                     let gridArea = `${thisLayerOffset+1} / ${top+thisLayerOffset} / ${thisLayerOffset+2} / ${top+thisLayerOffset+1}`
                     let id = `${layerLetter}${count}`
                     let newSquare = makeASquare(gridArea, id)
@@ -95,8 +114,8 @@ var gSize = url.searchParams.get("gSize");
                 }
 
                 //right
-
                 for (let right = 1; right < thisLayerLength; right++) {
+                    console.log(`draw right`)
                     let gridArea = `${right + thisLayerOffset} / ${thisLayerLength+thisLayerOffset} / ${right + thisLayerOffset + 1} / ${thisLayerLength + 1 + thisLayerOffset}`
                     let id = `${layerLetter}${count}`
                     let newSquare = makeASquare(gridArea, id)
@@ -105,6 +124,7 @@ var gSize = url.searchParams.get("gSize");
                 }
 
                 for (let bottom = 1; bottom < thisLayerLength; bottom++) {
+                    console.log(`draw bottom`)
                     let gridArea = `${calcLength - 1} / ${calcLength - bottom} / ${calcLength} / ${calcLength - bottom + 1}`
                     let id = `${layerLetter}${count}`
                     let newSquare = makeASquare(gridArea, id)
@@ -113,6 +133,7 @@ var gSize = url.searchParams.get("gSize");
                 }
 
                 for (let left = 1; left < thisLayerLength; left++) {
+                    console.log(`draw left`)
                     let gridArea = `${calcLength - left} / ${thisLayerOffset + 1} / ${calcLength - left + 1} / ${thisLayerOffset + 2}`
                     let id = `${layerLetter}${count}`
                     let newSquare = makeASquare(gridArea, id)
@@ -128,8 +149,6 @@ var gSize = url.searchParams.get("gSize");
 
             
         }
-
-    createGrid(arbLength)
 
     </script>
 </body>
