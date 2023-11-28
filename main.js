@@ -7,10 +7,11 @@ const squaresEl = {}
 
 /// Figure out how to add cost multipliers ... probably have to redo drawbutton to use cost multipliers of some sort.
 // game data
+// Generator price growth on outer layers = 1.5x ?
+// Generator price growth on inidividual layers? cost = base * (1.2)^amount ?
 
 function setColor(color) {
     colorData[color] = document.getElementById('colorBoxA')
-
 
 }
 
@@ -368,6 +369,12 @@ function findNeighbors(target) {
     const num = +target.slice(1)
 
     const modulo = layer * 2
+
+    // a 2    b 4    c 6     d 8
+
+
+
+    //  d 9 long
 
     const side = Math.floor(num / modulo)
     const upLayerNum = num + 1 + 2 * side
