@@ -30,7 +30,14 @@
 
     <script>
 
-        let arbLength = 9
+var url_string = window.location;
+var url = new URL(url_string);
+var gSize = url.searchParams.get("gSize");
+
+
+    console.log(gSize)
+
+        let arbLength = 23
         const gridElement = document.getElementById('grid-Container')
         let count = 0
 
@@ -49,11 +56,6 @@
             return layers;
         }
 
-        function resetGrid(num) {
-            arbLength = document.getElementById("gridSize").value
-            gridElement.innerHTML = ''
-            createGrid(arbLength)
-        }
 
 
         function makeASquare(area, id) {
@@ -123,22 +125,7 @@
                 thisLayerOffset++                 
 
             }
-            let center = document.createElement('div')
-            let gridArea = `${size / 2} / ${size / 2} / ${size / 2 + 1} / ${size / 2 + 1}`
-            center.classList.add('grid-item')
-            center.style.gridArea = gridArea
-            center.textContent = 'Center'
-            let textArea = document.createElement('input')
-            textArea.id = 'gridSize'
-            center.appendChild(textArea)
-            textArea.placeholder = '5'
-            let subbtn = document.createElement('button')
-            subbtn.textContent = 'Change size'
-            subbtn.addEventListener('click', () => {
-                resetGrid()
-            })
-            center.appendChild(subbtn)
-            gridElement.appendChild(center)
+
             
         }
 
