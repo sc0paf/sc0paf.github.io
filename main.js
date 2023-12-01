@@ -233,13 +233,12 @@ function buyBuilding(key, square) {
 
 
 function selectSquare(which, id) {
+
     // show & position card, then draw.
     drawCard(which, id)
     cardPopUp.style.display = 'block'
     cardPopUp.style.top = (event.pageY + cardPopUp.clientHeight / 2) + 'px';
     cardPopUp.style.left = (event.pageX + cardPopUp.clientWidth / 2) + 'px';
-
-
 }
 
 
