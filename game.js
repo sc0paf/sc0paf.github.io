@@ -2,6 +2,7 @@ const gridContainer = document.getElementById('gridContainer')
 const cardHeader = document.getElementById('cardHeader')
 const cardBody = document.getElementById('cardBody')
 const cardPopUp = document.getElementById('cardDisplay')
+let moneySpan;
 let energySpan;
 let staminaSpan;
 let squaresEl = {}
@@ -9,9 +10,14 @@ let gmLoop;
 
 let boardSize = (arg) => { return (arg.charCodeAt(0) - 96) * 2 + 1 }
 
+let squareType = (type) => { return type === 'None' ? 'Nothing' : type }
+
+
 const player = {
+    money: 10,
     energy: 5,
-    stamina: 12,
+    stamina: 4,
+    intervals: {},
     iterationSpeed: 350,
     iterationSpeeds: {
         a: 1000,
@@ -23,7 +29,7 @@ const player = {
         b: 1,
         c: 1
     },
-    activeSquares: ['a','b','c'],
+    activeSquares: ['a'],
     layerModifiers: {
         a: 1,
         b: 1,
@@ -51,6 +57,7 @@ let counter = {
 
 function selectSquare(which, id) {
     cardPopUp.style.display = which === 'close' ? 'none' : 'block';
+    //selectSquare = id
     if (which !== 'close') {
         drawCard(which, id)
         cardPopUp.style.top = (event.pageY + cardPopUp.clientHeight / 2) + 'px';
@@ -58,10 +65,71 @@ function selectSquare(which, id) {
     }
 }
 
+function drawCalculatedSquare(which, id) {
+    cardPopUp.style.display = which === 'close' ? 'none' : 'block';
+    let fullElement = document.getElementById('cardDisplay')
 
-function buyBuilding() {
+    if (which !== 'close') {
+        drawCard(which, id)
+        cardPopUp.style.top = (fullElement.offsetTop + cardPopUp.clientHeight) + 'px';
+        cardPopUp.style.left = (fullElement.offsetLeft + cardPopUp.clientWidth) + 'px';        
+    }
+}
+
+
+
+function buyBuilding(name, id) {
+    if (!canAffordBuilding(name)) return
+    player.money -= buildings[name].cost
+
+    let layer = id.charAt(0)
+    let num = id.charAt(1)
+
+    player.squares[layer][num].type = name
+    player.squares[layer][num].charges = buildings[name].charges
+    player.squares[layer][num].maxCharges = buildings[name].maxCharges
+    player.squares[layer][num].amount = buildings[name].amount
+    player.squares[layer][num].upgrades = buildings[name].upgrades
+
+    reDrawSquare(layer, num, name)
+    drawCard(layer, id)
+
+}
+
+function reDrawSquare(layer, num, type) {
+    let square = squaresEl[layer][num]
+    square.innerHTML = ''
+
+    let squareIdLabel = document.createElement('span')
+    squareIdLabel.style.margin = '0 0 auto auto'
+    squareIdLabel.textContent = `[${layer}${num}]`
+    square.appendChild(squareIdLabel)
+
+    let newImage = document.createElement('div')
+    newImage.classList.add(type)
+    newImage.style.margin = `auto`
+    player.squares[layer][num].coinDiv = newImage
+    square.appendChild(newImage)
+
+    let chargeDiv = document.createElement('span')
+    chargeDiv.textContent = `5 charges`
+    chargeDiv.style.fontStyle = 'italic'
+    chargeDiv.style.margin = `auto`
+    player.squares[layer][num].chargeEl = chargeDiv
+    square.appendChild(chargeDiv)
+
+
+    let cSpan = document.createElement('span')
+    cSpan.textContent = type
+    square.appendChild(cSpan)
+    
     
 }
+
+function canAffordBuilding(building) {
+    return player.money >= buildings[building].cost ? true :  false
+}
+
 
 
 function findNeighbors(target) {
@@ -123,24 +191,45 @@ function howManyLayers(size) {
 
 function makeASquare(area, id, letter) {
     let newSquare = document.createElement('div')
-        newSquare.classList.add('grid-item')
-        // newSquare.classList.add('active')
-        newSquare.classList.add(id.charAt(1) === '0' ? 'homeShop' : 'active')
-        newSquare.style.gridArea = area
-        newSquare.textContent = id
-        newSquare.id = id
+    newSquare.classList.add('grid-item')
+    newSquare.style.gridArea = area
+    newSquare.id = id
 
-        let newPlayerSquare = {
-            id: id,
-            type: id.charAt(1) === '0' ? 'Home' : 'None'
-            //type: 'None',
-            //neighbors: findNeighbors(element.id)
-        }
+    let cDiv = document.createElement('div')
+    let squareIdLabel = document.createElement('span')
+    squareIdLabel.style.margin = '0 0 auto auto'
+    squareIdLabel.textContent = `[${id}]`
+    newSquare.appendChild(squareIdLabel)
+    let newPlayerSquare = {
+        id: id,
+        type: id.charAt(1) === '0' ? 'Home' : 'None'
+        //type: 'None',
+        //neighbors: findNeighbors(element.id)
+    }
+
+
+    player.squares[letter].push(newPlayerSquare)
+    squaresEl[letter].push(newSquare)
+
+    if (id.charAt(1) === '0') {
+        newSquare.classList.add('homeShop')
+        let btn2 = document.createElement('button')
+        btn2.textContent = `Shop`
+        btn2.style.width = '80%'
+        newSquare.appendChild(btn2)
+        newSquare.appendChild(document.createElement('br'))
+
+    } else {
+        newSquare.classList.add('active')
         newSquare.addEventListener('click', () => {
             selectSquare(letter, id)
         })
-        player.squares[letter].push(newPlayerSquare)
-        squaresEl[letter].push(newSquare)
+
+
+    }
+    let cSpan = document.createElement('span')
+    cSpan.textContent = squareType(newPlayerSquare.type)
+    newSquare.appendChild(cSpan)
     return newSquare
 }
 
@@ -158,7 +247,7 @@ function createGrid(size) {
     let thisLayerLength = size
 
     if (howManyLayers < 2) {
-        gridContainer.style.padding = '15%'
+        gridContainer.style.padding = '10% 25%'
     } else if (howManyLayers < 3) {
         gridContainer.style.padding = '10%'
     }
@@ -215,29 +304,31 @@ function createGrid(size) {
     let gridArea = `${size / 2} / ${size / 2} / ${size / 2 + 1} / ${size / 2 + 1}`
     centerDiv.style.gridArea = gridArea
     centerDiv.classList.add('centerDisp')
-    let energyLabel = document.createElement('span')
-    energyLabel.textContent = `Energy`
-    let currentEnergy = document.createElement('span')
-    currentEnergy.id = energySpan
-    currentEnergy.textContent = player.energy
-    centerDiv.appendChild(energyLabel)
+
+    let moneyLabel = document.createElement('span')
+    moneyLabel.textContent = `Money`
+    let currentMoney = document.createElement('span')
+    currentMoney.id = moneySpan
+    currentMoney.textContent = player.money
+    centerDiv.appendChild(moneyLabel)
     centerDiv.appendChild(document.createElement('br'))
-    centerDiv.appendChild(currentEnergy)
-    energyLabel.style.width = '50%'
-    currentEnergy.style.width = '100%'
+    centerDiv.appendChild(currentMoney)
+    moneyLabel.style.width = `50%`
+    currentMoney.style.width = `100%`
     gridContainer.appendChild(centerDiv)
-    centerDiv.appendChild(document.createElement('br'))
-    let staminaLabel = document.createElement('span')
-    staminaLabel.textContent = `Stamina`
-    centerDiv.appendChild(document.createElement('br'))
-    let currentStamina = document.createElement('span')
-    currentStamina.textContent = player.stamina
-    centerDiv.appendChild(staminaLabel)
-    centerDiv.appendChild(document.createElement('br'))
-    centerDiv.appendChild(currentStamina)
+    moneySpan = currentMoney
+
     centerDiv.style.lineHeight = '1.5rem'
-    staminaSpan = currentStamina   
-    energySpan = currentEnergy
+}
+
+function playMoneyAnimation(el, amount) {
+    let increaseAnimation = document.createElement('div')
+    increaseAnimation.className = 'money-increase'
+    increaseAnimation.textContent = `+$${amount}`
+    el.appendChild(increaseAnimation)
+    setTimeout(() => {
+        el.removeChild(increaseAnimation)
+    },1500)
 }
 
 function runGameLoop(pause) {
@@ -245,10 +336,29 @@ function runGameLoop(pause) {
         clearInterval (gmLoop)
         return
     }
+
+
     gmLoop = setInterval(() => {
         player.activeSquares.forEach((layer) => {
             
             let currentSelection = squaresEl[layer][counter[layer]]
+
+
+
+
+            if(player.squares[layer][counter[layer]].type === 'Generator' && player.squares[layer][counter[layer]].charges > 0) {
+                player.squares[layer][counter[layer]].charges--
+                player.money += player.squares[layer][counter[layer]].amount
+                player.squares[layer][counter[layer]].chargeEl.textContent = `${player.squares[layer][counter[layer]].charges} charges`
+                let coinEl = player.squares[layer][counter[layer]].coinDiv
+                playMoneyAnimation(squaresEl[layer][counter[layer]], player.squares[layer][counter[layer]].amount)
+                coinEl.classList.add('animate-rotation')
+                setTimeout(() => {
+                    console.log(`turn off`)
+                        coinEl.classList.remove('animate-rotation')
+                },1000)
+            }
+
             let lastSelection = squaresEl[layer][(counter[layer] - 1 + squaresEl[layer].length) % squaresEl[layer].length]
                 if (lastSelection) {
                     lastSelection.style.color = 'black'
@@ -257,9 +367,11 @@ function runGameLoop(pause) {
 
                 currentSelection.style.backgroundColor = 'rgb(24, 24, 24)'
                 currentSelection.style.color = 'white'
+
                 
                 counter[layer] = (counter[layer] + 1) % squaresEl[layer].length
         })
+        moneySpan.textContent = player.money.toFixed(2)
 
     },1000)
 }

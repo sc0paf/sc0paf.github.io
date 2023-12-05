@@ -26,8 +26,6 @@ html, body {
 }
 
 .grid-item {
-    border: 1px solid #ccc;
-    text-align: center;
     height: 85%;
     width: 85%;
 
@@ -37,11 +35,7 @@ html, body {
     display: flex;
     background-color: rgb(235, 235, 235);
     transition: all .2s ease-in-out;
-    border-top: 1px solid #ccc;
-    border-left: 1px solid #ccc;
-    border-right: 2px solid #ccc;
-    border-bottom: 2px solid #ccc;
-    /* border-radius: 100%; */
+    border: 2px solid #ccc;
     box-shadow: 2px 2px 4px rgb(54, 54, 54);
     margin: 0px 0px 0px 0px;
     cursor: pointer;
@@ -55,11 +49,7 @@ html, body {
     display: flex;
     background-color: rgb(179, 255, 224);
     transition: all .2s ease-in-out;
-    border-top: 1px solid #ccc;
-    border-left: 1px solid #ccc;
-    border-right: 2px solid #ccc;
-    border-bottom: 2px solid #ccc;
-    /* border-radius: 100%; */
+    border: 2px solid #ccc;
     box-shadow: 2px 2px 4px rgb(54, 54, 54);
     margin: 0px 0px 0px 0px;
     cursor: pointer;
@@ -70,7 +60,6 @@ html, body {
 }
 
 .active:hover {
-    text-shadow: 1px 1px 1px black;
     transform: scale(1.1);
 }
 
@@ -114,4 +103,46 @@ html, body {
     margin-top: 5px;
     width: 95%;
     box-shadow: 2px 2px 2px #ccc;
+}
+
+.Generator {
+    width: 16px;
+    height: 16px;
+    background-image: url('assets/fullcoin.png');
+}
+
+.animate-rotation {
+    animation: rotateCoin 1s steps(8) infinite;
+}
+
+@keyframes rotateCoin {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -128px 0;
+    }
+}
+
+.money-generator {
+    position: relative;
+}
+
+.money-increase {
+    position: absolute;
+    font-size: 1.5em;
+    font-weight: bolder;
+    color: rgb(0, 227, 0);
+    animation: floatUp 3s ease-out;
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
 }
