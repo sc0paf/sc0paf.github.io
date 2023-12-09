@@ -17,6 +17,8 @@ let counter = {};
 // x*x ? board size? clever? aheuheu
 let boardSize = (arg) => { return (arg.charCodeAt(0) - 96) * 2 + 1 };
 
+
+
 // Do I even need this still?
 let squareType = (type) => { return type === 'None' ? 'Nothing' : type };
 
@@ -108,7 +110,7 @@ function reDrawSquare(layer, num, type) {
     let cSpan = document.createElement('span')
     cSpan.textContent = type
     cSpan.style.color = secondaryTextColor
-    square.appendChild(cSpan)       
+    square.appendChild(cSpan) 
 }
 
 function canAffordBuilding(building) {
@@ -188,6 +190,7 @@ function makeASquare(area, id, letter, number) {
         newSquare.id = id
 
         let cDiv = document.createElement('div')
+        
         let squareIdLabel = document.createElement('span')
         squareIdLabel.style.margin = '0 0 auto auto'
         squareIdLabel.style.color = secondaryTextColor
@@ -505,7 +508,7 @@ function drawCardButton(obj) {
     title.appendChild(document.createTextNode(obj.name))
     newButton.appendChild(title)
     newButton.appendChild(document.createElement('br'))
-    let costText = document.createElement('em')
+    let costText = document.      console.log(currentPlayerSquare)createElement('em')
     costText.appendChild(document.createTextNode(`Cost : $${obj.cost}`))
     newButton.appendChild(costText)
     newButton.appendChild(document.createElement('br'))

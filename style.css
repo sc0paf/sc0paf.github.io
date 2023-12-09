@@ -66,6 +66,7 @@ html, body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
+    user-select: none;
 }
 
 .homeShop {
@@ -91,7 +92,9 @@ html, body {
     color: var(--primary-text);
 }
 
-#cardDisplay {
+/* Card Stuff */
+
+#cardContainer {
     display: none;
     position: fixed;
     top: 50%;
@@ -99,35 +102,58 @@ html, body {
     transform: translate(-50%, -50%);
     width: 200px;
     height: auto;
-    background-color: white;
-    border: 2px solid rgb(190, 190, 190);
+    background-color: var(--active-bg-color);
+    color: var(--primary-text);
+    border: 2px solid var(--menu-color);
     border-radius: 5px;
     padding: 0;
     padding-bottom: 1rem;
     margin: 0;
-    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
+    box-shadow: 2px 2px 3px black;
 }
 
-.cardHeader {
-    width: 100%;
-    border-bottom: 1px solid rgb(236 236 236);
-    font-weight: bold;
-    text-shadow: 1px 1px 2px #ccc;
-    padding-bottom: .5rem;
+.cardHead {
+    padding-top: 1rem;
+    text-align: center;
+    user-select: none;
 }
 
 #cardBody { 
     width: 90%;
-    margin-top: 5px;
+    padding-top: 1rem;
     text-align: center;
     margin: auto;
+    user-select: none;
+}
+
+.cardCloseBtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.cardHeader {
+    width: 100%;
+    font-weight: bold;
+    padding-bottom: .5rem;
+    text-align: center;
 }
 
 .cardButtons {
     margin-top: 5px;
     width: 95%;
-    box-shadow: 2px 2px 2px #ccc;
+    border: 1px solid black;
+    border-radius: 5px;
+    /* box-shadow: 2px 2px 2px black; */
 }
+
+.cardButtons:hover {
+    transform: scale(1.05);
+    
+}
+
 
 .Generator {
     width: 16px;
