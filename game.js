@@ -31,7 +31,8 @@ let player = {
     layerMultis: {},
     activeSquares: ['a'],
     drawnLayers: [],
-    squares: {}
+    squares: {},
+    boardUpgrades: {}
 };
 
 
@@ -236,17 +237,7 @@ function makeASquare(area, id, letter, number) {
         return newSquare    
 }
 
-function loadGrid(size) {
-    gridContainer.innerHTML = ''
-    gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`
-    gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`
-    let howManyLayers = player.activeSquares.length
-    let thisLayerOffset = 0
-    let calcLength = size + 1
-    let thisLayerLength = size
 
-
-}
 
 function createGrid(size) {
     gridContainer.innerHTML = ''

@@ -166,3 +166,137 @@ function findNeighbors(target) {
     }  
     return adjs
 }
+
+
+
+
+// initializerizationizer. idk about this function is kinda sucks
+function init() {
+    saveData = localStorage.getItem('saveGame');
+    if (saveData) {
+      console.log('save data detected')
+      let playerData = JSON.parse(saveData)
+      player = playerData
+      player.activeSquares.reverse()
+    } else {
+      console.log('no save data')
+      player.activeSquares.forEach((layer) => {
+        player.squares[layer] = [];
+        player.layerMultis[layer] = 1;
+        player.iterationSpeeds[layer] = 1000;
+        player.boardUpgrades[layer] = {};
+        for (const key in boardUpgrades) {
+          player.boardUpgrades[layer][key] = 1
+        }
+      })
+    }
+  
+    let currentBoardSize = player.activeSquares.length * 2 + 1;
+  
+    drawBoard(currentBoardSize);
+  
+    player.activeSquares.forEach((layer) => {
+      counter[layer] = 0;
+      squaresEl[layer][counter[layer]].style.backgroundColor = menuColor
+      squaresEl[layer][counter[layer]].style.border = `1px dashed darkgray`
+      squaresEl[layer][counter[layer]].style.color = 'white'
+  
+      counter[layer]++
+  
+      setTimeout(() => {
+        runGameStep(layer)
+      }, player.iterationSpeeds[layer])
+    })
+  }
+
+
+
+
+  // dem bonez
+function drawBoard(size) {
+    // clear
+    gridContainer.innerHTML = ''
+    // set size
+    gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`
+    gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+    let howManyLayers = player.activeSquares.length
+    let thisLayerOffset = 0
+    let calcLength = size + 1
+    let thisLayerLength = size
+    if (player.activeSquares.length < 2) {
+      gridContainer.style.padding = `5% 10%`
+    } else if (player.activeSquares.length < 3) {
+      gridContainer.style.padding = `5%`
+    } 
+    // build outside in bc feeble human brain
+    player.activeSquares.reverse().forEach((letter) => {
+      let count = 0
+      if (!squaresEl[letter]) {squaresEl[letter] = []}
+  
+      // i bet this could be more efficient, but feeble human brain
+      //top
+      for (let top = 1; top < thisLayerLength; top++) {
+        let gridArea = `${thisLayerOffset+1} / ${top+thisLayerOffset} / ${thisLayerOffset+2} / ${top+thisLayerOffset+1}`
+        let sId = `${letter}${count}`
+        let newSquare = drawBlankSquare(gridArea, letter, count)
+        newSquare.id = sId;
+        count++
+        gridContainer.appendChild(newSquare)
+      }
+  
+      //right 
+      for (let right = 1; right < thisLayerLength; right++) {
+        let gridArea = `${right + thisLayerOffset} / ${thisLayerLength+thisLayerOffset} / ${right + thisLayerOffset + 1} / ${thisLayerLength + 1 + thisLayerOffset}`
+        let sId = `${letter}${count}`
+        let newSquare = drawBlankSquare(gridArea, letter, count)
+        newSquare.id = sId;
+        count++
+        gridContainer.appendChild(newSquare)
+      }
+  
+      // bottom
+      for (let bottom = 1; bottom < thisLayerLength; bottom++) {
+        let gridArea = `${calcLength - 1} / ${calcLength - bottom} / ${calcLength} / ${calcLength - bottom + 1}`
+        let sId = `${letter}${count}`
+        let newSquare = drawASquare(gridArea, letter, count)
+        newSquare.id = id;
+        count++
+        gridContainer.appendChild(newSquare)
+      }
+  
+      //left
+      for (let left = 1; left < thisLayerLength; left++) {
+        let gridArea = `${calcLength - left} / ${thisLayerOffset + 1} / ${calcLength - left + 1} / ${thisLayerOffset + 2}`
+        let sId = `${letter}${count}`
+        let newSquare = drawASquare(gridArea, letter, count)
+        newSquare.id = sId;
+  
+        count++
+        gridContainer.appendChild(newSquare)
+      }
+    
+    calcLength--
+    thisLayerLength -= 2
+    thisLayerOffset++
+    })
+  
+    // draw the center. why is this so long? wtf?
+    let centerDiv = document.createElement('div')
+    let gridArea = `${size / 2} / ${size / 2} / ${size / 2 + 1} / ${size / 2 + 1}`
+    centerDiv.style.gridArea = gridArea
+    centerDiv.classList.add('centerDisp')
+  
+    let moneyLabel = document.createElement('span')
+    moneyLabel.textContent = 'Money'
+    let currentMoney = document.createElement('span')
+    currentMoney.id = moneySpan
+    currentMoney.textContent = player.money.toFixed(2)
+    centerDiv.appendChild(moneyLabel)
+    centerDiv.appendChild(document.createElement('br'))
+    centerDiv.appendChild(currentMoney)
+    moneyLabel.style.width = `90%`
+    currentMoney.style.width = `90%`
+    gridContainer.appendChild(centerDiv)
+    moneySpan = currentMoney
+    centerDiv.style.lineHeight = '1.5rem'
+  }

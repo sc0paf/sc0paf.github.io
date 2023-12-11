@@ -196,3 +196,27 @@ html, body {
         transform: translateY(-50px);
     }
 }
+
+.cantAfford {
+    animation: shakeshakeshake .15s linear;
+}
+
+@keyframes shakeshakeshake {
+    30% {transform: translateX(5px); box-shadow: 0 0 5px 5px darkred; }
+    60% {transform: translateX(-5px); box-shadow: 0 0 5px 5px darkred;}
+    90% {transform: translateX(5px)}
+}
+
+
+
+@keyframes horizontal-shaking {
+    0% { 
+        transform: translateX(0);
+    }
+    10% { transform: translateX(5px);
+        border: 1px solid red; }
+    50% { transform: translateX(-5px);
+    border: 1px solid red; }
+    100% { transform: translateX(5px) }
+    /* 100% { transform: translateX(0) } */
+}

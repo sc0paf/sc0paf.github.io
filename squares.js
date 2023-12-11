@@ -16,47 +16,116 @@ const secondaryTextColor = rootStyles.getPropertyValue('--secondary-text');
 
 // various Data
 let saveData;
+let savedGame;
 let squaresEl = {};
 let counter = {};
 let modalState = false;
 
+// ternary stuff
+function canAffordBuilding(building, layer) { return player.money >= buildings[building].cost * (buildings[building].layerCostMod ** (layer.charCodeAt(0)-97)) }                                                                     
+function canAffordUpgrade(upgrade, layer) { return player.money >= upgrade.cost * (upgrade.layerCostMod ** (layer.charCodeAt(0) - 97)) * (1.4 ** player.boardUpgrades[layer][upgrade.id]) }
+function canAffordSqUp (upgrade, layer, id) { 
+  let squareIndex = id.charAt(1)
+  let level = player.squares[layer][squareIndex].upgrades[upgrade.id].level
+  let fetchCost = upgrade.cost * (upgrade.layerCostMod ** (layer.charCodeAt(0) - 97) * (1.4 ** (level - 1)))
+  return player.money >= fetchCost
+}
+
+let cardFontSize = () => { return player.activeSquares.length < 2 ? '1rem' : '.6rem' }
+
+//player
 let player = {
-  money: 5,
+  money: 100000,
   intervals: {},
   iterationSpeeds: {},
   layerMultis: {},
-  activeSquares: ['a'],
-  squares: {}
+  activeSquares: ['a','b'],
+  squares: {},
+  boardUpgrades: {}
 }
 
-
+// save / load / baleet
 function saveGame() {
   let playerData = JSON.stringify(player);
-  localStorage.setItem('saveGame', playerData)
+  localStorage.setItem('savedData', playerData)
 }
 
 function dS() {
-  localStorage.removeItem('saveGame')
+  localStorage.removeItem('savedData')
 }
 
-function init() {
-  saveData = localStorage.getItem('saveGame');
-  if (saveData) {
-    console.log('save data detected')
-    let playerData = JSON.parse(saveData)
-    player = playerData
+function initialize() {
+  savedGame = localStorage.getItem('savedData');
+  let playerData;
+  let currentBoardSize;
+  if (savedGame) {
+    console.log('Save data detected.');
+    playerData = JSON.parse(savedGame)
+    //playerData.activeSquares.reverse()
+    currentBoardSize = playerData.activeSquares.length * 2 + 1;    
+
   } else {
-    console.log('no save data')
-    player.activeSquares.forEach((layer) => {
+    console.log('No Save Data');
+    currentBoardSize = player.activeSquares.length * 2 + 1;
+    player.activeSquares.forEach((layer) => {     
       player.squares[layer] = [];
       player.layerMultis[layer] = 1;
       player.iterationSpeeds[layer] = 1000;
+      player.boardUpgrades[layer] = {};
+
+      for (const key in boardUpgrades) {
+        player.boardUpgrades[layer][key] = 1;
+      };
     })
   }
 
-  let currentBoardSize = player.activeSquares.length * 2 + 1;
+  drawGrid(currentBoardSize);
 
-  drawBoard(currentBoardSize);
+  player.activeSquares.forEach((letter) => {
+    squaresEl[letter].forEach((square, index) => {
+      
+      
+      let topLabel = document.createElement('div')
+      let topLeft = document.createElement('span')
+      let topRight = document.createElement('span')
+      topLabel.style.width = '100%'
+      topLabel.style.display = 'flex'
+      topLabel.style.justifyContent = 'space-between'
+      topLabel.appendChild(topLeft)
+      topLabel.appendChild(topRight)
+      topLabel.style.margin = '0 0 auto auto'
+      topRight.textContent = `[${square.id}]`
+      square.appendChild(topLabel)
+
+      let imageDiv = document.createElement('div')
+      imageDiv.id = `${letter}${index}Img`
+      let chargeDiv = document.createElement('div')
+      chargeDiv.id = `${letter}${index}Charge`
+      let bottomLabel = document.createElement('span')
+      bottomLabel.style.margin = 'auto 0 0 0'
+      square.appendChild(bottomLabel)
+
+      if (savedGame) {
+        bottomLabel.textContent = playerData.squares[letter][index].type
+        player.squares[letter][index] = playerData.squares[letter][index]
+
+
+      } else {
+
+        bottomLabel.textContent = index === 0 ? 'Home' : 'None'
+        let newSquare = {
+          id: `${letter}${index}`,
+          type: index === 0 ? 'Home' : 'None'
+        }
+
+        // Add square to player object
+        player.squares[letter].push(newSquare)
+      }
+      square.addEventListener('click', () => {
+        openModal(square.id)
+      })
+    })
+  })
 
   player.activeSquares.forEach((layer) => {
     counter[layer] = 0;
@@ -66,46 +135,41 @@ function init() {
 
     counter[layer]++
 
-    setTimeout(() => {
-      runGameStep(layer)
-    }, player.iterationSpeeds[layer])
+    // setTimeout(() => {
+    //   runGameStep(layer)
+    // }, player.iterationSpeeds[layer])
   })
-
+  player.activeSquares.reverse()
 }
 
 
-
-function drawBoard(size) {
-  // clear
+function drawGrid(size) {
   gridContainer.innerHTML = ''
 
-  // set size
   gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`
   gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`
 
-  // might not need this?
-  let howManyLayers = player.activeSquares.length
+  let howManyLayers = player.activeSquares.length;
 
-  let thisLayerOffset = 0
-  let calcLength = size + 1
-  let thisLayerLength = size
+  let thisLayerOffset = 0;
+  let calcLength = size + 1;
+  let thisLayerLength = size;
 
   if (player.activeSquares.length < 2) {
-    gridContainer.style.padding = `10% 25%`
+    gridContainer.style.padding = `5% 10%`
   } else if (player.activeSquares.length < 3) {
-    gridContainer.style.padding = `10%`
+    gridContainer.style.padding = `5%`
   }
-
+  
   player.activeSquares.reverse().forEach((letter) => {
-    let count = 0
+    let count = 0;
     if (!squaresEl[letter]) {squaresEl[letter] = []}
 
-    //top
     for (let top = 1; top < thisLayerLength; top++) {
       let gridArea = `${thisLayerOffset+1} / ${top+thisLayerOffset} / ${thisLayerOffset+2} / ${top+thisLayerOffset+1}`
       let id = `${letter}${count}`
-      let newSquare = drawASquare(gridArea, letter, count)
-      // how to handle saves???
+      let newSquare = drawBlankSquare(gridArea, letter, count)
+      squaresEl[letter].push(newSquare)
       count++
       gridContainer.appendChild(newSquare)
     }
@@ -114,7 +178,8 @@ function drawBoard(size) {
     for (let right = 1; right < thisLayerLength; right++) {
       let gridArea = `${right + thisLayerOffset} / ${thisLayerLength+thisLayerOffset} / ${right + thisLayerOffset + 1} / ${thisLayerLength + 1 + thisLayerOffset}`
       let id = `${letter}${count}`
-      let newSquare = drawASquare(gridArea, letter, count)
+      let newSquare = drawBlankSquare(gridArea, letter, count)
+      squaresEl[letter].push(newSquare)
       count++
       gridContainer.appendChild(newSquare)
     }
@@ -123,27 +188,25 @@ function drawBoard(size) {
     for (let bottom = 1; bottom < thisLayerLength; bottom++) {
       let gridArea = `${calcLength - 1} / ${calcLength - bottom} / ${calcLength} / ${calcLength - bottom + 1}`
       let id = `${letter}${count}`
-      let newSquare = drawASquare(gridArea, letter, count)
+      let newSquare = drawBlankSquare(gridArea, letter, count)
+      squaresEl[letter].push(newSquare)
       count++
       gridContainer.appendChild(newSquare)
-  }
+    }
 
     //left
     for (let left = 1; left < thisLayerLength; left++) {
       let gridArea = `${calcLength - left} / ${thisLayerOffset + 1} / ${calcLength - left + 1} / ${thisLayerOffset + 2}`
       let id = `${letter}${count}`
-      let newSquare = drawASquare(gridArea, letter, count)
-
-
+      let newSquare = drawBlankSquare(gridArea, letter, count)
+      squaresEl[letter].push(newSquare)
       count++
       gridContainer.appendChild(newSquare)
-  }
-  
-  calcLength--
-  thisLayerLength -= 2
-  thisLayerOffset++
+    }
+    calcLength--
+    thisLayerLength -= 2
+    thisLayerOffset++
   })
-
   let centerDiv = document.createElement('div')
   let gridArea = `${size / 2} / ${size / 2} / ${size / 2 + 1} / ${size / 2 + 1}`
   centerDiv.style.gridArea = gridArea
@@ -153,7 +216,7 @@ function drawBoard(size) {
   moneyLabel.textContent = 'Money'
   let currentMoney = document.createElement('span')
   currentMoney.id = moneySpan
-  currentMoney.textContent = player.money
+  currentMoney.textContent = player.money.toFixed(2)
   centerDiv.appendChild(moneyLabel)
   centerDiv.appendChild(document.createElement('br'))
   centerDiv.appendChild(currentMoney)
@@ -164,6 +227,27 @@ function drawBoard(size) {
   centerDiv.style.lineHeight = '1.5rem'
 }
 
+
+
+
+
+function drawBlankSquare(area, layer, count) {
+  let newSquare = document.createElement('div')
+  newSquare.classList.add('grid-item')
+  newSquare.style.gridArea = area
+  newSquare.id = `${layer}${count}`  
+
+  let idLabelSpan = document.createElement('div')
+  idLabelSpan.style.color = secondaryTextColor
+  idLabelSpan.style.fontSize = cardFontSize
+
+  newSquare.appendChild(idLabelSpan)
+  newSquare.classList.add('active')
+  return newSquare
+}
+
+
+// just draw 1. 
 function drawASquare(area, layer, count) {
   //generic square stuff
   let newSquare = document.createElement('div')
@@ -171,10 +255,11 @@ function drawASquare(area, layer, count) {
   newSquare.style.gridArea = area
   newSquare.id = `${layer}${count}`
 
-  let idLabelSpan = document.createElement('span')
-  idLabelSpan.style.margin = `0 0 auto auto`
+  let idLabelSpan = document.createElement('div')
   idLabelSpan.style.color = secondaryTextColor
-  idLabelSpan.textContent = `[${layer}${count}]`
+  idLabelSpan.style.fontSize = cardFontSize
+
+
   newSquare.appendChild(idLabelSpan)
 
   let type;
@@ -190,21 +275,43 @@ function drawASquare(area, layer, count) {
     player.squares[layer].push(newPlayerSquare)
   }
 
+  if (type === 'None' || type === 'Home') {
+    idLabelSpan.textContent = `[${layer}${count}]`
+    idLabelSpan.style.margin = `0 0 auto auto`
+    idLabelSpan.style.padding = '2px'
+  } else {
+    idLabelSpan.style.width = '100%'
+    idLabelSpan.style.display = 'flex'
+    idLabelSpan.style.justifyContent = 'space-between'
+    let left = document.createElement('span')
+    player.squares[layer][count].amtSpan = left
+    let right = document.createElement('span')
+    left.style.padding = '2px'
+    right.style.padding = '2px'
+    left.id = `${layer}${count}-amount`
+    left.textContent = `$${player.squares[layer][count].amount}`
+    right.textContent = `[${layer}${count}]`
+    idLabelSpan.appendChild(left)
+    idLabelSpan.appendChild(right)
+  }
+
   if (type === 'Generator') {
+
     let newImage = document.createElement('div')
     newImage.classList.add(type)
     newImage.style.margin = `auto`
     newSquare.appendChild(newImage)
     player.squares[layer][count].imageDiv = newImage
 
+
+
+
     let chargeDiv = document.createElement('div')
     let currentMax = document.createElement('span')
-    currentMax.textContent = `${player.squares[layer][count].charges}`
+    currentMax.textContent = `${player.squares[layer][count].charges} / ${player.squares[layer][count].maxCharges} charges`
     chargeDiv.appendChild(currentMax)
+    currentMax.style.fontSize = cardFontSize
     chargeDiv.appendChild(document.createElement('br'))
-    let chargeLabel = document.createElement('span')
-    chargeLabel.textContent = 'Charges'
-    chargeDiv.appendChild(chargeLabel)
     chargeDiv.style.fontStyle = 'italic'
     chargeDiv.style.margin = 'auto'
     chargeDiv.style.textAlign = 'center'
@@ -216,6 +323,7 @@ function drawASquare(area, layer, count) {
   newSquare.addEventListener('click', () => {
     openModal(newSquare.id, type)
   })
+
   newSquare.classList.add('active')
   let squareTypeLabel = document.createElement('span')
   squareTypeLabel.style.color = secondaryTextColor;
@@ -236,59 +344,101 @@ document.addEventListener('click', function(event) {
   } 
 });
 
-function openModal(id, type) {
+function openModal(id) {
   cardModal.style.display = id === 'close' ? 'none' : 'block';
+
   if (id !== 'close') {
     drawCard(id)
-    cardModal.style.top = (event.pageY + cardModal.clientHeight / 2) + 'px';
-    cardModal.style.left = (event.pageX + cardModal.clientWidth / 2) + 'px';    
+
+    const modalWidth = cardModal.clientWidth;
+    const modalHeight = cardModal.clientHeight;
+    const mouseX = event.pageX
+    const mouseY = event.pageY
+
+    const maxX = window.innerWidth - (modalWidth * .6)
+    const maxY = window.innerHeight - (modalHeight * .6)
+
+    let modalX = mouseX + modalWidth / 2;
+    let modalY = mouseY + modalHeight / 2;
+
+    modalX = Math.min(modalX, maxX)
+    modalY = Math.min(modalY, maxY)
+
+    cardModal.style.top = modalY + 'px';
+    cardModal.style.left = modalX + 'px' 
   }
   event.stopPropagation();
 }
 
-function drawCard(id) {
+function drawCard(squareId) {
+  console.log(squareId)
   cardHeader.textContent = ''
   cardBody.textContent = ''
-  let layer = id.charAt(0)
-  const square = player.squares[layer].find(obj => obj.id === id)
-  cardHeader.textContent = `${id} - ${square.type}`
+  let layer = squareId.charAt(0)
+  let num = squareId.charAt(1)
+  const square = player.squares[layer].find(obj => obj.id === squareId)
+  cardHeader.textContent = `${squareId} - ${square.type === 'None' ? 'Empty' : square.type}`
   let cardName = document.createElement('strong')
   cardName.appendChild(document.createTextNode(square.type === 'None' ? 'Nothing here..' : square.type))
   cardBody.appendChild(cardName)
 
   if (square.type === 'Generator') {
+    console.log(square)
     // draw Generator Card
+
+    // charge Button
     let chargeBtn = document.createElement('button')
     chargeBtn.style.width = '100%'
     chargeBtn.style.height = '3rem'
     chargeBtn.textContent = `Charge [${square.charges} / ${square.maxCharges}]`
     chargeBtn.style.fontFamily = 'monospace'
-    chargeBtn.id = `b${id}`
+    chargeBtn.id = `b${squareId}`
     activeChargeBtn = chargeBtn
+
     chargeBtn.addEventListener('click', () => {
       if (square.charges < square.maxCharges) {
         chargeBtn.style.transform = 'scale(1.05)'
         setTimeout(() => {chargeBtn.style.transform = `scale(1.0)`}, 100)
         square.charges++
-        square.chargeEl.textContent = `${square.charges} Charges`
+        square.chargeEl.textContent = `${square.charges}/${square.maxCharges} Charges`
+        square.chargeEl.style.fontSize = cardFontSize
         chargeBtn.textContent = `Charge [${square.charges} / ${square.maxCharges}]`
       }
     })
     cardBody.appendChild(chargeBtn)
 
-    for (const key in buildings[square.type].upgrades) {
-      let upgradeButton = drawCardButton(buildings[square.type].upgrades[key])
+
+    // upgrades 
+    for (const key in player.squares[layer][num].upgrades) {
+      //let upgradeButton = drawCardButton(buildings[square.type].upgrades[key], layer, square)
+      let upgradeButton = document.createElement('button')
+      upgradeButton.style.width = '100%'
+
+      upgradeCost = player.squares[layer][num].upgrades[key].cost * player.squares[layer][num].upgrades[key].level
+      upgradeButton.textContent = `${player.squares[layer][num].upgrades[key].id} - ${upgradeCost}`
+
+
+      upgradeButton.id = `uBtn${squareId}`
       upgradeButton.addEventListener('click', () => {
-        buyUpgrade(square, buildings[square.type].upgrades[key].id)
+        trytoupgrade(layer, num, player.squares[layer][num].upgrades[key])
+        //console.log(`${layer} ${square.id} ${buildings[square.type].upgrades[key].id} ${upgradeButton}`)
+        //buyUpgrade(layer, square.id, buildings[square.type].upgrades[key])
       })
       cardBody.appendChild(upgradeButton)
     }
-
-
-
-
   } else if (square.type === 'Home') {
-    //draw home card
+    let actionLabel = document.createElement('p')
+    actionLabel.textContent = 'Layer Upgrades'
+    actionLabel.style.userSelect = 'none'
+
+    for (const upgrade in boardUpgrades) {
+      let upgradeButton = drawCardButton(boardUpgrades[upgrade], layer)
+      upgradeButton.addEventListener('click', () => {
+        buyBoardUpgrade(layer, boardUpgrades[upgrade], upgradeButton)
+      })
+      cardBody.appendChild(upgradeButton)
+
+    }
   } else {
     let actionLabel = document.createElement('p')
     actionLabel.textContent = 'Build?'
@@ -296,23 +446,84 @@ function drawCard(id) {
     cardBody.appendChild(actionLabel)
 
     for (const key in buildings) {
-      let buildButton = drawCardButton(buildings[key])
+      let buildButton = drawCardButton(buildings[key], layer)
       buildButton.addEventListener('click', () => {
         buyBuilding(buildings[key], square)
       })
       cardBody.appendChild(buildButton)
     }
-
   }
 }
 
-function canAffordBuilding(building) {
-  console.log(buildings.cost)
-  return player.money >= buildings[building].cost ? true : false
+function trytoupgrade(layer, num, upgrade) {
+  console.log(`${layer} ${num} ${upgrade.id}`)
 }
 
+function buySquareUpgrade(squareId, squareType, key, upgradeButton) {
+  let [layer, num] = [...squareId]
+  let baseCost = buildings[squareType].upgrades[key].cost
+  let finalCost = baseCost * (buildings[squareType].upgrades[key].levelCostMod ** (player.squares[layer][num].upgrades[key].level-1))
+  if(player.money >= finalCost) {
+    if (key === 'generated') {
+      player.money -= finalCost
+      player.squares[layer][num].upgrades[key].level++
+      player.squares[layer][num].amount++
+      drawCard(squareId)
+      reDrawSquare(layer, num, squareType)
+    }
+  }
+}
+
+function buyBoardUpgrade(layer, upgrade, button) {
+  if(!canAffordUpgrade(upgrade, layer)) {
+    animateBrokeBitch(button)
+  } else {   
+    if (upgrade.id === 'gameSpeed') {
+      let cost = upgrade.cost * (upgrade.layerCostMod ** (layer.charCodeAt(0) - 97)) * (upgrade.levelCostMod ** (player.boardUpgrades[layer][upgrade.id] - 1))
+      player.money -= cost
+      player.iterationSpeeds[layer] *= .7
+      player.boardUpgrades[layer][upgrade.id]++
+    }
+  }
+}
+
+function animateBrokeBitch(button) {
+  button.classList.add('cantAfford')
+  setTimeout(() => button.classList.remove('cantAfford'),500)
+}
+
+function buyUpgrade(layer, squareId, upgrade, upgradeButton) {
+  if (!canAffordSqUp(upgrade, layer, squareId)) {
+    //animateBrokeBitch(upgradeButton)
+    return
+  } else {
+    let playerSquare = player.squares[layer][squareId.charAt(1)]
+    let level = playerSquare.upgrades[upgrade.id].level
+    let cost = upgrade.cost * (upgrade.layerCostMod ** (layer.charCodeAt(0) - 97) * (upgrade.levelCostMod ** (level - 1)))
+
+    console.log(`buy level ${level} on ${playerSquare.id}`)
+    playerSquare.upgrades[upgrade.id].level++   
+    player.money -= cost
+
+    if (upgrade.id === 'generated') {
+      playerSquare.amount *= 2
+      playerSquare.amtSpan.textContent = `$${playerSquare.amount}`
+    }
+    if (upgrade.id === 'charges') {
+      playerSquare.maxCharges += 4
+      playerSquare.charges += 4
+      playerSquare.chargeEl.textContent = `${playerSquare.charges}/${playerSquare.maxCharges} charges`      
+    }
+
+    drawCard(squareId)
+    event.stopPropagation();
+  }
+}
+
+
+
 function buyBuilding(building, square) {
-  if (!canAffordBuilding(building.name)) return
+  if (!canAffordBuilding(building.name, square.id.charAt(0))) return
   player.money -= building.cost
   let [layer, num] = [...square.id]
   player.squares[layer][num].type = building.name
@@ -321,20 +532,37 @@ function buyBuilding(building, square) {
   player.squares[layer][num].amount = building.amount
   player.squares[layer][num].upgrades = building.upgrades
 
-  moneySpan.textContent = player.money
+  moneySpan.textContent = player.money.toFixed(2)
+
   reDrawSquare(layer, num, building.name)
+  drawCard(square.id)
+  //event.stopPropagation();
+  
 }
+
+
 
 function reDrawSquare(layer, num, type) {
 
   let square = squaresEl[layer][num]
   square.innerHTML = ''
 
-  let squareIdLabel = document.createElement('span')
-  squareIdLabel.style.margin = '0 0 auto auto'
+  let squareIdLabel = document.createElement('div')
+  squareIdLabel.style.display = 'flex'
+  squareIdLabel.style.width = '100%'
+  squareIdLabel.style.justifyContent = 'space-between'
+  squareIdLabel.style.fontSize = cardFontSize
+
+  let left = document.createElement('span')
+  player.squares[layer][num].amtSpan = left
+  let right = document.createElement('span')
+  left.textContent = `$${player.squares[layer][num].amount}`
+  right.textContent = `[${layer}${num}]`
   squareIdLabel.style.color = secondaryTextColor
-  squareIdLabel.textContent = `[${layer}${num}]`
+
   square.appendChild(squareIdLabel)
+  squareIdLabel.appendChild(left)
+  squareIdLabel.appendChild(right)
   
   let newImage = document.createElement('div')
   newImage.classList.add(type)
@@ -345,18 +573,16 @@ function reDrawSquare(layer, num, type) {
 
   //might need if generator
   let chargeDiv = document.createElement('div')
-  let currentMax = document.createElement('span')
-  currentMax.textContent = `5`
-  chargeDiv.appendChild(currentMax)
+  let chargeSpan = document.createElement('span')
+  chargeSpan.textContent = `${player.squares[layer][num].charges}/${player.squares[layer][num].maxCharges} charges`
+  chargeDiv.appendChild(chargeSpan)
   chargeDiv.appendChild(document.createElement('br'))
-  let chargeLabel = document.createElement('span')
-  chargeLabel.textContent = 'Charges'
-  chargeDiv.appendChild(chargeLabel)
   chargeDiv.style.fontStyle = 'italic'
   chargeDiv.style.margin = `auto`
   chargeDiv.style.textAlign = 'center'
+  chargeDiv.style.fontSize = cardFontSize
   chargeDiv.style.color = primaryTextColor
-  player.squares[layer][num].chargeEl = chargeDiv
+  player.squares[layer][num].chargeEl = chargeSpan
   square.appendChild(chargeDiv)
   
   let squareTypeLabel = document.createElement('span')
@@ -365,15 +591,24 @@ function reDrawSquare(layer, num, type) {
   square.appendChild(squareTypeLabel)
 }
 
-function drawCardButton(obj) {
+function drawCardButton(obj, layer, square) {
+  let layerNum = layer.charCodeAt(0)-97
+  let newCost;
+  if (square) {
+    newCost = obj.cost * (obj.layerCostMod ** layerNum) * (obj.levelCostMod ** (square.upgrades[obj.id].level - 1))
+  } else {
+    newCost = obj.cost * (obj.layerCostMod ** layerNum)
+  }
+
   // generic card button
   let newButton = document.createElement('button')
   let title = document.createElement('strong')
-  title.appendChild(document.createTextNode(obj.name))
+  let titleText = square ? `${obj.name} [Lv.${square.upgrades[obj.id].level}]` : `${obj.name}`
+  title.appendChild(document.createTextNode(titleText))
   newButton.appendChild(title)
   newButton.appendChild(document.createElement('br'))
   let costText = document.createElement('em')
-  costText.appendChild(document.createTextNode(`Cost : $${obj.cost}`))
+  costText.appendChild(document.createTextNode(`Cost : $${newCost.toFixed(2)}`))
   newButton.appendChild(costText)
   newButton.appendChild(document.createElement('br'))
   newButton.appendChild(document.createTextNode(obj.description))
@@ -397,7 +632,6 @@ function runGameStep(layer) {
   let currentPlayerSquare = player.squares[layer][counter[layer]]
 
   if (layer === 'a' && counter[layer] === 0) {
-      console.log(`save`)
       let playerData = JSON.stringify(player);
       localStorage.setItem('savedGame', playerData);
   }
@@ -406,7 +640,7 @@ function runGameStep(layer) {
   if (currentPlayerSquare.type === 'Generator' && currentPlayerSquare.charges > 0) {
       player.squares[layer][counter[layer]].charges--
       player.money += player.squares[layer][counter[layer]].amount
-      player.squares[layer][counter[layer]].chargeEl.textContent = `${player.squares[layer][counter[layer]].charges} charges`
+      player.squares[layer][counter[layer]].chargeEl.textContent = `${player.squares[layer][counter[layer]].charges}/${player.squares[layer][counter[layer]].maxCharges} charges`
       let imageEl = player.squares[layer][counter[layer]].imageDiv
       playMoneyAnimation(squaresEl[layer][counter[layer]], player.squares[layer][counter[layer]].amount)
       let curr = `b${currentPlayerSquare.id}`     
@@ -448,8 +682,7 @@ let tempLoop = setInterval(() => {
       saveButton.disabled = false;
     },1000)  
 },1000)
-  console.log('saved')
   
 }, 10000)
 
-init()
+initialize()
