@@ -3,9 +3,9 @@ const gridContainer = document.getElementById('gridContainer');
 const cardModal = document.getElementById('cardContainer');
 const cardHeader = document.getElementById('cardHeader');
 const cardBody = document.getElementById('cardBody');
-let moneySpan;
-let activeChargeBtn
-let saveButton = document.getElementById('saveButton')
+let saveButton = document.getElementById('saveButton');
+let moneySpan, activeChargeBtn;
+
 
 // CSS Variables
 const rootStyles = getComputedStyle(document.documentElement);
@@ -13,13 +13,222 @@ const activeBgColor = rootStyles.getPropertyValue('--active-bg-color');
 const menuColor = rootStyles.getPropertyValue('--menu-color');
 const primaryTextColor = rootStyles.getPropertyValue('--primary-text');
 const secondaryTextColor = rootStyles.getPropertyValue('--secondary-text');
+let cardFontSize = () => { return player.activeSquares.length < 2 ? '1rem' : '.6rem' };
 
-// various Data
-let saveData;
-let savedGame;
-let squaresEl = {};
-let counter = {};
+let squaresEl = {}, counter = {}, player = {};
 let modalState = false;
+
+
+function startGame() {
+  let loadPlayerData = localStorage.getItem('savedPlayerData');
+  let loadedData;
+  
+  if (loadPlayerData) {
+    console.log('Data detected: Load Player')
+    // save detected, load player data.
+    let loadedPlayerData = JSON.parse(loadPlayerData)
+    player = loadedPlayerData
+
+  } else {
+    // no save, draw player object
+    console.log('No data: create Player')
+    player.money = 10;
+    player.intervals = {};
+    player.activeSquares = ['a','b'];
+    player.layerData = {
+      a: {
+        iterationSpeeds: 1000,
+        boardUpgrades: [],
+      }
+    };
+    player.squares = {};
+
+
+    player.activeSquares.forEach((layer) => {
+      let layerSize = (layer.charCodeAt(0) - 96) * 8
+      player.squares[layer] = {}
+      for (let i = 0; i < layerSize; i++) {
+        player.squares[layer][i] = {
+          id: `${layer}${i}`,
+          type: 'None'
+        }
+      }
+    })
+  }
+  console.log('player data loaded, drawing board...')
+  let boardSize = player.activeSquares.length * 2 + 1;
+  drawBoard(boardSize);
+}
+
+function splitId(id) {
+  let layer = id.charAt(0);
+  let number = parseInt(id.slice(1), 10);
+  return { id, layer, number };
+}
+
+
+
+function squareContent(elementId) {
+  let output = document.createDocumentFragment();
+
+  let top = document.createElement('div')
+  top.id = 'idlabel'
+  let imageSpot = document.createElement('div')
+  imageSpot.id = 'imageLabel'
+  let bottomLabel = document.createElement('div')
+  bottomLabel.id = 'bottomLabel'
+
+  if (player.squares[elementId.layer][elementId.number].type === 'None') {
+    top.style.marginLeft = 'auto'
+    top.textContent = `[${elementId.id}]`
+    top.style.verticalAlign = 'top'
+  } else {
+    // draw both sides
+  }
+
+
+  output.appendChild(top)
+  output.appendChild(imageSpot)
+  output.appendChild(bottomLabel)
+
+  return output
+
+}
+
+
+
+function drawBlankSquare(area, layer, count) {
+  let thisPlayerSquare = player.squares[layer][count]
+  let newSquare = document.createElement('div')
+  newSquare.classList.add('grid-item')
+  newSquare.style.gridArea = area
+  newSquare.id = `${layer}${count}`  
+
+  // Top of Square
+  let idLabelSpan = document.createElement('div')
+  idLabelSpan.style.color = secondaryTextColor
+  idLabelSpan.style.fontSize = cardFontSize
+
+  if (thisPlayerSquare.type === 'None' || thisPlayerSquare.type === 'Home') {
+    idLabelSpan.textContent = `[${layer}${count}]`
+    idLabelSpan.style.margin = '0 0 auto auto'
+    newSquare.appendChild(idLabelSpan)
+
+  } else {
+    idLabelSpan.style.width = '100%'
+    idLabelSpan.style.display = 'flex'
+    idLabelSpan.style.justifyContent = 'space-between'
+    idLabelSpan.style.margin = '0 0 auto 0'
+    let left = document.createElement('span')
+    player.squares[layer][count].amtSpan = left
+    let right = document.createElement('span')
+    left.textContent = `$${player.squares[layer][count].amount}`
+    right.textContent = `[${layer}${count}]`
+    idLabelSpan.appendChild(left)
+    idLabelSpan.appendChild(right)
+    newSquare.appendChild(idLabelSpan)
+
+    let imageDiv = document.createElement('div')
+    imageDiv.classList.add(thisPlayerSquare.type)
+    imageDiv.style.margin = 'auto'
+    newSquare.appendChild(imageDiv)
+  }
+
+  newSquare.addEventListener('click', () => {
+    openModal(thisPlayerSquare.id)
+  })
+
+  let typeSpan = document.createElement('div')
+  typeSpan.textContent = thisPlayerSquare.type
+  newSquare.appendChild(typeSpan)
+
+  newSquare.classList.add('active')
+  return newSquare
+}
+
+function drawBoard(size) {
+  gridContainer.innerHTML = ''
+
+  gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`
+  gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+
+  let howManyLayers = player.activeSquares.length;
+  let thisLayerOffset = 0;
+  let calcLength = size + 1;
+  let thisLayerLength = size;
+
+
+  let activeSquaresBackwards = player.activeSquares.slice().reverse()
+
+  activeSquaresBackwards.forEach((layer) => {
+    if (!squaresEl[layer]) {squaresEl[layer] = []}
+    let count = 0;
+
+    for (let top = 1; top < thisLayerLength; top++) {
+      let gridArea = `${thisLayerOffset+1} / ${top+thisLayerOffset} / ${thisLayerOffset+2} / ${top+thisLayerOffset+1}`
+      let id = `${layer}${count}`
+      let newSquare = drawBlankSquare(gridArea, layer, count)
+      squaresEl[layer].push(newSquare)
+      player.squares[layer][count].element = newSquare
+      count++
+      gridContainer.appendChild(newSquare)
+    }
+
+    //right 
+    for (let right = 1; right < thisLayerLength; right++) {
+      let gridArea = `${right + thisLayerOffset} / ${thisLayerLength+thisLayerOffset} / ${right + thisLayerOffset + 1} / ${thisLayerLength + 1 + thisLayerOffset}`
+      let id = `${layer}${count}`
+      let newSquare = drawBlankSquare(gridArea, layer, count)
+      squaresEl[layer].push(newSquare)
+      player.squares[layer][count].element = newSquare
+      count++
+      gridContainer.appendChild(newSquare)
+    }
+
+    // bottom
+    for (let bottom = 1; bottom < thisLayerLength; bottom++) {
+      let gridArea = `${calcLength - 1} / ${calcLength - bottom} / ${calcLength} / ${calcLength - bottom + 1}`
+      let id = `${layer}${count}`
+      let newSquare = drawBlankSquare(gridArea, layer, count)
+      squaresEl[layer].push(newSquare)
+      player.squares[layer][count].element = newSquare
+      count++
+      gridContainer.appendChild(newSquare)
+    }
+
+    //left
+    for (let left = 1; left < thisLayerLength; left++) {
+      let gridArea = `${calcLength - left} / ${thisLayerOffset + 1} / ${calcLength - left + 1} / ${thisLayerOffset + 2}`
+      let id = `${layer}${count}`
+      let newSquare = drawBlankSquare(gridArea, layer, count)
+      squaresEl[layer].push(newSquare)
+      player.squares[layer][count].element = newSquare
+      count++
+      gridContainer.appendChild(newSquare)
+    }
+  
+    calcLength--;
+    thisLayerLength -= 2;
+    thisLayerOffset++;
+  })
+}
+
+
+
+function saveMe() {
+  let savePlayerData = JSON.stringify(player)
+  localStorage.setItem('savedPlayerData', savePlayerData)
+}
+
+function kill() {
+  localStorage.removeItem('savedPlayerData')
+}
+
+startGame()
+
+
+
+
 
 // ternary stuff
 function canAffordBuilding(building, layer) { return player.money >= buildings[building].cost * (buildings[building].layerCostMod ** (layer.charCodeAt(0)-97)) }                                                                     
@@ -31,28 +240,9 @@ function canAffordSqUp (upgrade, layer, id) {
   return player.money >= fetchCost
 }
 
-let cardFontSize = () => { return player.activeSquares.length < 2 ? '1rem' : '.6rem' }
 
-//player
-let player = {
-  money: 100000,
-  intervals: {},
-  iterationSpeeds: {},
-  layerMultis: {},
-  activeSquares: ['a','b'],
-  squares: {},
-  boardUpgrades: {}
-}
 
-// save / load / baleet
-function saveGame() {
-  let playerData = JSON.stringify(player);
-  localStorage.setItem('savedData', playerData)
-}
 
-function dS() {
-  localStorage.removeItem('savedData')
-}
 
 function initialize() {
   savedGame = localStorage.getItem('savedData');
@@ -231,20 +421,7 @@ function drawGrid(size) {
 
 
 
-function drawBlankSquare(area, layer, count) {
-  let newSquare = document.createElement('div')
-  newSquare.classList.add('grid-item')
-  newSquare.style.gridArea = area
-  newSquare.id = `${layer}${count}`  
 
-  let idLabelSpan = document.createElement('div')
-  idLabelSpan.style.color = secondaryTextColor
-  idLabelSpan.style.fontSize = cardFontSize
-
-  newSquare.appendChild(idLabelSpan)
-  newSquare.classList.add('active')
-  return newSquare
-}
 
 
 // just draw 1. 
@@ -671,18 +848,18 @@ function runGameStep(layer) {
 }
 
 
-let tempLoop = setInterval(() => {
-  saveGame();
-  saveButton.disabled = true;
-  saveButton.textContent = 'Saving...'
-  setTimeout(() => {
-    saveButton.textContent = 'Saved!'
-    setTimeout(() => {
-      saveButton.textContent = 'Save'
-      saveButton.disabled = false;
-    },1000)  
-},1000)
+// let tempLoop = setInterval(() => {
+//   saveGame();
+//   saveButton.disabled = true;
+//   saveButton.textContent = 'Saving...'
+//   setTimeout(() => {
+//     saveButton.textContent = 'Saved!'
+//     setTimeout(() => {
+//       saveButton.textContent = 'Save'
+//       saveButton.disabled = false;
+//     },1000)  
+// },1000)
   
-}, 10000)
+// }, 10000)
 
-initialize()
+//initialize()

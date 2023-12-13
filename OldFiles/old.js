@@ -300,3 +300,37 @@ function drawBoard(size) {
     moneySpan = currentMoney
     centerDiv.style.lineHeight = '1.5rem'
   }
+
+
+
+
+
+  function generateColorSequence(count) {
+    const startColor = [255, 0, 0]; // RGB values for the starting color (e.g., red)
+    const endColor = [0, 0, 255];   // RGB values for the ending color (e.g., blue)
+  
+    const colorSequence = [];
+  
+    for (let i = 0; i < count; i++) {
+      // Interpolate between startColor and endColor
+      const interpolatedColor = interpolateColors(startColor, endColor, i / (count - 1));
+      colorSequence.push(`${interpolatedColor.join(',')}`);
+    }
+  
+    return colorSequence;
+  }
+  
+  // Helper function to interpolate between two RGB colors
+  function interpolateColors(color1, color2, ratio) {
+    const result = [];
+    for (let i = 0; i < 3; i++) {
+      result.push(Math.round(color1[i] + ratio * (color2[i] - color1[i])));
+    }
+    return result;
+  }
+  
+  // Example: generate color sequence for 5 objects
+  const colorSequence = generateColorSequence(5);
+  colorSequence.forEach((color, index) => {
+    console.log(`${color}`);
+  });
