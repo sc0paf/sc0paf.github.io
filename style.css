@@ -16,6 +16,8 @@ html, body {
     flex-direction: column;
 }
 
+
+
 #navBar {
     color: var(--primary-text);
     width: 100%;
@@ -58,8 +60,9 @@ html, body {
 
 .grid-item {
     background-color: var(--active-bg-color);
-    width: 85%;
-    aspect-ratio: 1 / 1;
+    height: 100%;   
+    width: 100%;
+
     /* width: 85%; */
 }
 
@@ -78,6 +81,12 @@ html, body {
     justify-content: center;
     flex-direction: column;
     user-select: none;
+}
+
+.selected {
+    transform: scale(1.1);
+    background-color: var(--menu-color);
+    border: 2px dashed gold;
 }
 
 .homeShop {

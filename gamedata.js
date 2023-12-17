@@ -1,20 +1,153 @@
-class Square {
+class Blank {
     constructor(sID, type) {
         this.id = sID
         this.type = type
+        this.availableBuildings = [
+        {
+            type: 'Generator',
+            typeClass: Generator,
+            cost: 5,
+            description: 'Generates $2.',
+            layerCostMod: 1.5
+        }, 
+        {
+            type: 'Multi (not implemented)',
+            typeClass: Multi,
+            cost: 15,
+            description: 'Idk - multiplies something IG.',
+            layerCostMod: 2.5
+        }]
+    }
+
+    toJSON() {
+        return {
+          cName: this.type,
+          id: this.id,
+          type: this.type
+        }
+    }
+
+    getBuildingCost(buildingType, layer) {
+        let layerNum = layer.charCodeAt(0) - 97
+        const building = this.availableBuildings.find(building => building.type === buildingType)
+        return building.cost * (building.layerCostMod ** layerNum)
+    }
+
+    canBuyBuilding(buildingType, layer) {
+        const building = this.availableBuildings.find(building => building.type === buildingType)
+        return player.money >= this.getBuildingCost(buildingType, layer)
+    }
+
+    getBuilding(buildingType, layer) {
+        if (this.canBuyBuilding(buildingType, layer)) {
+            const building = this.availableBuildings.find(building => building.type === buildingType)
+            const newClass = building.typeClass
+
+            return newClass
+        }   
     }
 }
 
-class Generator extends Square {
-    constructor(sID, type, element) {
+class Multi extends Blank {
+
+}
+
+
+class Home {
+    constructor(sID, type, element, upgraded) {
+        this.id = sID
+        this.type = type
+        this.element = element
+        this.upgrades = {
+            layerSpeed: {
+                name: 'Layer Speed',
+                id: 'layerSpeed',
+                description: 'vroooooom',
+                baseCost: 150,
+                layerCostMod: 3,
+                levelCostMod: 2.5,
+                level: upgraded[0],
+                maxLevel: 10
+            },
+            addLayer: {
+                name: 'Add Layer',
+                id: 'addLayer',
+                description: 'Reset everything and gain another layer.',
+                level: upgraded[1],
+                layerCostMod: 5,
+                levelCostMod: 1,
+                maxLevel: 2,
+                baseCost: 1000
+            }
+        }
+    }
+
+    canAffordUpgrade(upgradeID, layer) {
+        return player.money >= this.getUpgradeCost(upgradeID, layer)
+    }
+
+    canBuyLayer (layer) {
+        return player.activeSquares.length > (layer.charCodeAt(0) - 96)
+    }
+
+    buyUpgrade(upgradeID, layer) {
+        if (upgradeID === 'layerSpeed') {
+            if (this.upgrades[upgradeID].level < this.upgrades[upgradeID].maxLevel) {
+                this.upgrades[upgradeID].level++
+                player.layerData[layer].iterationSpeeds *= .9
+                this.element.innerHTML = ''
+                let redraw = populateSquare(this)
+                this.element.appendChild(redraw)
+            }
+        } else if (upgradeID === 'addLayer') {
+            if (this.upgrades[upgradeID].level < this.upgrades[upgradeID].maxLevel) {
+                player.activeSquares.forEach((layer) => {
+                    clearTimeout(timers[layer])
+                })
+                let thisLayer = layer.charCodeAt(0)+1
+                let nextLayer = String.fromCharCode(thisLayer)
+                player.activeSquares.push(nextLayer)
+                resetBoard(player.activeSquares)
+            }
+        }
+    }
+
+    getUpgradeCost(upgradeID, layer) {
+        let layerNumb = layer.charCodeAt(0) - 97
+        let baseCost = this.upgrades[upgradeID].baseCost
+        let levelMod = this.upgrades[upgradeID].levelCostMod
+        let layerMod = this.upgrades[upgradeID].layerCostMod
+        let level = this.upgrades[upgradeID].level
+
+        return baseCost * (levelMod ** (level - 1))
+        // return this.upgrades[upgradeID].baseCost * (this.upgrades[upgradeID].levelCostMod ** (this.upgrades[upgradeID].level - 1)) * (this.upgrades[upgradeID].layerCostMod ** layerNumb)
+    }
+
+    toJSON() {
+        return {
+            cName: 'Home',
+            id: this.id,
+            upgrades: {
+                layerSpeed: this.upgrades.layerSpeed.level,
+                addLayer: this.upgrades.addLayer.level
+            }
+        }
+    }
+}
+
+
+class Generator extends Blank {
+    constructor(sID, type, element, charges, maxCharges, amount, upgrades) {
         super(sID, type)
+        this.classType = Generator
         this.element = element
         this.description = 'Generates $2';
         this.cost = 5;
-        this.charges = 5;
-        this.maxCharges = 5;
+        this.charges = charges;
+        this.maxCharges = maxCharges;
         this.layerCostMod = 1.75;
-        this.amount = 2;
+        this.amount = amount;
+        this.chargeAmt = 1;
         this.upgrades = {
             generated: {
                 name: 'Amount Generated',
@@ -23,21 +156,80 @@ class Generator extends Square {
                 layerCostMod: 1.6,
                 levelCostMod: 1.4,
                 cost: 15,
-                level: 1
+                level: upgrades[0],
+                maxLevel: 100
+            },
+            maxCharges: {
+                name: 'Max Charges',
+                id: 'maxCharges',
+                description: 'Increases the maximum charges for this Generator.',
+                layerCostMod: 1.6,
+                levelCostMod: 1.4,
+                cost: 20,
+                level: upgrades[1],
+                maxLevel: 20
             }
         }
     }
 
-    currentUpgradeCost(upgrade) {
-        let currentCost = this.upgrades[upgrade].cost
-        let currentLevel = this.upgrades[upgrade].level
-        let modifier = this.upgrades[upgrade].levelCostMod
+    toJSON() {
+        return {
+            cName: 'Generator',
+            charges: this.charges,
+            id: this.id,
+            maxCharges: this.maxCharges,
+            amount: this.amount,
+            upgrades: {
+                generated: this.upgrades.generated.level,
+                maxCharges: this.upgrades.maxCharges.level
+            }
+        }
+    }
 
-        return currentCost * (1.4 ** (currentLevel - 1))
+    charge(chargeButton) {
+        if (this.charges < this.maxCharges) {
+            chargeButton.style.transform = 'scale(1.05)'
+            setTimeout(() => {
+                chargeButton.style.transform = `scale(1.0)`
+            },100)
+            this.charges += this.chargeAmt
+
+            chargeButton.textContent = `Charge [${this.charges} / ${this.maxCharges}]`
+            this.element.innerHTML = ''
+            let redraw = populateSquare(this)
+            this.element.appendChild(redraw)
+        }
+    }
+
+    getUpgradeCost(upgrade, layer) {
+        let layerNum = layer.charCodeAt(0) - 97
+        let baseCost = this.upgrades[upgrade].cost
+        let levelMod = this.upgrades[upgrade].levelCostMod
+        let layerMod = this.upgrades[upgrade].layerCostMod
+        let currentLevel = this.upgrades[upgrade].level
+        
+        return baseCost * (levelMod ** (currentLevel - 1)) * (layerMod ** layerNum)
+    }
+
+    canBuyUpgrade(upgrade, layer) {
+        return player.money >= this.getUpgradeCost(upgrade, layer)
+    }
+
+    doUpgrade(upgrade, layer) {
+        if (this.canBuyUpgrade(upgrade, layer)) {
+            player.money -= this.getUpgradeCost(upgrade, layer)
+            this.upgrades[upgrade].level++
+            if (upgrade === 'generated') {
+                this.amount *= 2
+            } else if (upgrade === 'maxCharges') {
+                this.charges += 2
+                this.maxCharges += 2
+            }
+        }
     }
 
     buyUpgrade(upgrade) {
-        if (player.money >= this.currentUpgradeCost(upgrade)) {
+        if (player.money >= this.currentUpgradeCost(upgrade, layer)) {
             player.money -= this.upgrades[upgrade].cost
             this.upgrades[upgrade].level++
             this.element.innerHTML = this.upgrades[upgrade].level          
@@ -45,59 +237,11 @@ class Generator extends Square {
     }
 }
 
-const buildings = {
-    Generator: {
-        name: 'Generator',
-        description: 'Generates $2.',
-        cost: 5,
-        charges: 5,
-        maxCharges: 5,
-        layerCostMod: 1.75,
-        amount: 2,
-        upgrades: {
-            generated: {
-                name: 'Amount Generated',
-                id: 'generated',
-                description: 'Doubles the amount generated by this generator.',
-                layerCostMod: 1.6,
-                levelCostMod: 1.4,
-                cost: 15,
-                level: 1
-            },
-            charges: {
-                name: 'Max Charges',
-                id: 'charges',
-                description: 'Adds 4 more max charges to this generator.',
-                cost: 25,
-                layerCostMod: 1.9,
-                levelCostMod: 1.8,
-                level: 1
-            }
-        }
-    },
-    // More buildings to come...
+const classMap = {
+    Blank,
+    Generator,
+    Multi,
+    Home
 }
 
-
-
-
-const boardUpgrades = {
-    gameSpeed: {
-        id: 'gameSpeed',
-        name: 'Layer Speed',
-        description: 'Squares move along this layer quicker.',
-        cost: 100,
-        layerCostMod: 3,
-        levelCostMod: 4,
-        levelMulti: 1.2
-    },
-    boardSize: {
-        id: 'boardSize',
-        name: 'Add Layer',
-        description: 'Add another layer to the grid.',
-        cost: 1000,
-        layerCostMod: 3,
-        levelCostMod: 1
-    }
-}
 
