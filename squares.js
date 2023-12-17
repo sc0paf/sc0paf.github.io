@@ -48,18 +48,23 @@ function startGame() {
       let layerSize = (layer.charCodeAt(0) - 96) * 8
       player.squares[layer] = {}
       for (let i = 0; i < layerSize; i++) {
-        player.squares[layer][i] = {
-          id: `${layer}${i}`,
-          type: 'None'
-        }
+        let sid = `${layer}${i}`
+        player.squares[layer][i] = new Square(sid, i === 0 ? 'Home' : 'None')
       }
     })
   }
   console.log('player data loaded, drawing board...')
   let boardSize = player.activeSquares.length * 2 + 1;
   drawBoard(boardSize);
+
+  setPadding();
+
+  populateBoard();
 }
 
+window.addEventListener('resize', setPadding);
+
+// returns 'a2' as an object with properties layer (a) number (2) and id (a2)
 function splitId(id) {
   let layer = id.charAt(0);
   let number = parseInt(id.slice(1), 10);
@@ -67,85 +72,18 @@ function splitId(id) {
 }
 
 
-
-function squareContent(elementId) {
-  let output = document.createDocumentFragment();
-
-  let top = document.createElement('div')
-  top.id = 'idlabel'
-  let imageSpot = document.createElement('div')
-  imageSpot.id = 'imageLabel'
-  let bottomLabel = document.createElement('div')
-  bottomLabel.id = 'bottomLabel'
-
-  if (player.squares[elementId.layer][elementId.number].type === 'None') {
-    top.style.marginLeft = 'auto'
-    top.textContent = `[${elementId.id}]`
-    top.style.verticalAlign = 'top'
-  } else {
-    // draw both sides
-  }
-
-
-  output.appendChild(top)
-  output.appendChild(imageSpot)
-  output.appendChild(bottomLabel)
-
-  return output
-
-}
-
-
-
+// draw a square, blank
 function drawBlankSquare(area, layer, count) {
-  let thisPlayerSquare = player.squares[layer][count]
   let newSquare = document.createElement('div')
   newSquare.classList.add('grid-item')
   newSquare.style.gridArea = area
-  newSquare.id = `${layer}${count}`  
-
-  // Top of Square
-  let idLabelSpan = document.createElement('div')
-  idLabelSpan.style.color = secondaryTextColor
-  idLabelSpan.style.fontSize = cardFontSize
-
-  if (thisPlayerSquare.type === 'None' || thisPlayerSquare.type === 'Home') {
-    idLabelSpan.textContent = `[${layer}${count}]`
-    idLabelSpan.style.margin = '0 0 auto auto'
-    newSquare.appendChild(idLabelSpan)
-
-  } else {
-    idLabelSpan.style.width = '100%'
-    idLabelSpan.style.display = 'flex'
-    idLabelSpan.style.justifyContent = 'space-between'
-    idLabelSpan.style.margin = '0 0 auto 0'
-    let left = document.createElement('span')
-    player.squares[layer][count].amtSpan = left
-    let right = document.createElement('span')
-    left.textContent = `$${player.squares[layer][count].amount}`
-    right.textContent = `[${layer}${count}]`
-    idLabelSpan.appendChild(left)
-    idLabelSpan.appendChild(right)
-    newSquare.appendChild(idLabelSpan)
-
-    let imageDiv = document.createElement('div')
-    imageDiv.classList.add(thisPlayerSquare.type)
-    imageDiv.style.margin = 'auto'
-    newSquare.appendChild(imageDiv)
-  }
-
-  newSquare.addEventListener('click', () => {
-    openModal(thisPlayerSquare.id)
-  })
-
-  let typeSpan = document.createElement('div')
-  typeSpan.textContent = thisPlayerSquare.type
-  newSquare.appendChild(typeSpan)
+  newSquare.id = `${layer}${count}`
 
   newSquare.classList.add('active')
   return newSquare
 }
 
+// Draw the current board, blank
 function drawBoard(size) {
   gridContainer.innerHTML = ''
 
@@ -211,9 +149,99 @@ function drawBoard(size) {
     thisLayerLength -= 2;
     thisLayerOffset++;
   })
+  let centerDiv = document.createElement('div')
+  let gridArea = `${size / 2} / ${size / 2} / ${size / 2 + 1} / ${size / 2 + 1}`
+  centerDiv.style.gridArea = gridArea
+  centerDiv.classList.add('centerDisp')
+
+  let moneyLabel = document.createElement('span')
+  moneyLabel.textContent = 'Money'
+  let currentMoney = document.createElement('span')
+  currentMoney.id = moneySpan
+  currentMoney.textContent = player.money.toFixed(2)
+  centerDiv.appendChild(moneyLabel)
+  centerDiv.appendChild(document.createElement('br'))
+  centerDiv.appendChild(currentMoney)
+  moneyLabel.style.width = `90%`
+  currentMoney.style.width = `90%`
+  gridContainer.appendChild(centerDiv)
+  moneySpan = currentMoney
+  centerDiv.style.lineHeight = '1.5rem'
 }
 
+// dynamic padding for mobile - make this better
+function setPadding() {
+  if (window.innerWidth > 600) {
+    // Larger screens
+    if (player.activeSquares.length < 2) {
+      gridContainer.style.padding = `15% 20%`;
+    } else if (player.activeSquares.length < 3) {
+      gridContainer.style.padding = `5%`;
+    }
+  } else {
+    // Smaller screens (e.g., mobile devices)
+    gridContainer.style.padding = `0%`;
+  }
+}
 
+function populateSquare(playerSquare) {
+
+  let returnSquare = document.createDocumentFragment();
+  let headerDiv = document.createElement('div')
+  let left = document.createElement('span')
+  let right = document.createElement('span')
+
+  headerDiv.style.display = 'flex'
+  headerDiv.style.width = '100%'
+  headerDiv.style.justifyContent  = 'space-between'
+  headerDiv.style.margin = '0 0 auto auto'
+
+  switch (playerSquare.type) {
+    case 'Generator':
+      left.textContent = `$${playerSquare.amount}`
+      break;
+    case 'Multi':
+      left.textContent = `x${playerSquare.amount}`
+      break;
+    default:
+      left.textContent = ''
+      break;
+  }
+
+  right.textContent = `[${playerSquare.id}]`
+  headerDiv.append(left, right)
+
+
+  let imageDiv = document.createElement('div')
+  imageDiv.classList.add(playerSquare.type)
+  imageDiv.style.margin = 'auto'
+
+  let squareTypeLabel = document.createElement('div')
+  squareTypeLabel.textContent = playerSquare.type
+
+  returnSquare.append(headerDiv, imageDiv, squareTypeLabel)
+
+  return returnSquare;
+}
+
+// FILL EM UP
+function populateBoard() {
+  for (const layer in player.squares) {
+
+    for (const square in player.squares[layer]) {
+      let currentElement = player.squares[layer][square].element
+      let thisPlayerSquare = player.squares[layer][square]
+      let newSquare = populateSquare(player.squares[layer][square])
+      
+      currentElement.appendChild(newSquare)
+
+      currentElement.addEventListener('click', () => {
+        fillCard(thisPlayerSquare.id)
+        runModal(thisPlayerSquare.id)
+      })
+    }
+  }
+}
 
 function saveMe() {
   let savePlayerData = JSON.stringify(player)
@@ -222,6 +250,113 @@ function saveMe() {
 
 function kill() {
   localStorage.removeItem('savedPlayerData')
+}
+
+
+// Just open and close.
+// TODO : Click outside closes?
+function runModal (squareID) {
+  if (squareID == 'close') {
+    cardModal.style.display = 'none'
+  }
+
+  if (squareID !== 'close') {
+    cardModal.style.display = 'block'
+    let selectedSquare = splitId(squareID)
+    let thisPlayerSquare = player.squares[selectedSquare.layer][selectedSquare.number]
+
+    const modalWidth = cardModal.clientWidth;
+    const modalHeight = cardModal.clientHeight;
+    const mouseX = event.pageX;
+    const mouseY = event.pageY;
+
+    const maxX = window.innerWidth - (modalWidth * .6)
+    const maxY = window.innerHeight - (modalHeight * .6)
+
+    let modalX = mouseX + modalWidth / 2;
+    let modalY = mouseY + modalHeight / 2;
+
+    modalX = Math.min(modalX, maxX);
+    modalY = Math.min(modalY, maxY);
+
+    cardModal.style.top = modalY + 'px';
+    cardModal.style.left = modalX + 'px';
+  }
+}
+
+function fillCard(squareID) {
+  cardHeader.textContent = ''
+  cardBody.textContent = ''
+
+  let idObj = splitId(squareID)
+
+  const playerSquare = player.squares[idObj.layer][idObj.number]
+
+  // header..
+  cardHeader.textContent = `${idObj.id} - ${playerSquare.type}`
+
+  // flavor text
+  let cardName = document.createElement('strong')
+  cardName.appendChild(document.createTextNode(playerSquare.type === 'None' ? 'Nothing here...' : playerSquare.type))
+
+
+  if (playerSquare.type === 'Generator') {
+    let chargeBtn = document.createElement('button');
+
+    // Flesh out charge button
+    chargeBtn.style.width = '100%';
+    chargeBtn.style.height = '3rem';
+    chargeBtn.textContent = 'Charge?'
+
+    chargeBtn.addEventListener('click', () => {
+      // flesh out charge action.
+      console.log(`Charge ${playerSquare.id}`)
+    })
+
+    cardBody.append(chargeBtn, cardName)
+
+  } else if (playerSquare.type === 'None') {
+    let flavorText = document.createElement('p')
+    flavorText.textContent = 'Build?'
+    cardBody.appendChild(flavorText)
+
+    for (const building in buildings) {
+      let buildingButton = document.createElement('button')
+      buildingButton.classList.add('cardButtons')
+      let buildingName = document.createElement('strong')
+      let buildingCost = document.createElement('span')
+      buildingCost.style.fontStyle = 'italic'
+      let buildingDescription = document.createElement('span')
+
+
+      buildingName.textContent = buildings[building].name
+      buildingCost.textContent = `Cost: $${buildings[building].cost}`
+      buildingDescription.textContent = buildings[building].description
+
+      buildingButton.append(buildingName, document.createElement('br'), buildingCost, document.createElement('br'), buildingDescription)
+      buildingButton.addEventListener('click', ()=> {
+        createBuilding(buildings[building], playerSquare, buildingButton)
+      })
+      cardBody.appendChild(buildingButton)
+      
+    }
+  }
+
+}
+
+function createBuilding(buildingObj, playerSquareObj, buildButton) {
+
+  if (player.money >= buildingObj.cost) {
+    let whichSquare = splitId(playerSquareObj.id)
+    let squareEle = playerSquareObj.element
+    player.squares[whichSquare.layer][whichSquare.number] = new Generator(whichSquare.id, 'Generator', playerSquareObj.element)
+    let newInner = populateSquare(player.squares[whichSquare.layer][whichSquare.number])
+    squareEle.innerHTML = ''
+    squareEle.appendChild(newInner)
+
+  } else {
+    animateBrokeBitch(buildButton)
+  }
 }
 
 startGame()
@@ -243,94 +378,6 @@ function canAffordSqUp (upgrade, layer, id) {
 
 
 
-
-function initialize() {
-  savedGame = localStorage.getItem('savedData');
-  let playerData;
-  let currentBoardSize;
-  if (savedGame) {
-    console.log('Save data detected.');
-    playerData = JSON.parse(savedGame)
-    //playerData.activeSquares.reverse()
-    currentBoardSize = playerData.activeSquares.length * 2 + 1;    
-
-  } else {
-    console.log('No Save Data');
-    currentBoardSize = player.activeSquares.length * 2 + 1;
-    player.activeSquares.forEach((layer) => {     
-      player.squares[layer] = [];
-      player.layerMultis[layer] = 1;
-      player.iterationSpeeds[layer] = 1000;
-      player.boardUpgrades[layer] = {};
-
-      for (const key in boardUpgrades) {
-        player.boardUpgrades[layer][key] = 1;
-      };
-    })
-  }
-
-  drawGrid(currentBoardSize);
-
-  player.activeSquares.forEach((letter) => {
-    squaresEl[letter].forEach((square, index) => {
-      
-      
-      let topLabel = document.createElement('div')
-      let topLeft = document.createElement('span')
-      let topRight = document.createElement('span')
-      topLabel.style.width = '100%'
-      topLabel.style.display = 'flex'
-      topLabel.style.justifyContent = 'space-between'
-      topLabel.appendChild(topLeft)
-      topLabel.appendChild(topRight)
-      topLabel.style.margin = '0 0 auto auto'
-      topRight.textContent = `[${square.id}]`
-      square.appendChild(topLabel)
-
-      let imageDiv = document.createElement('div')
-      imageDiv.id = `${letter}${index}Img`
-      let chargeDiv = document.createElement('div')
-      chargeDiv.id = `${letter}${index}Charge`
-      let bottomLabel = document.createElement('span')
-      bottomLabel.style.margin = 'auto 0 0 0'
-      square.appendChild(bottomLabel)
-
-      if (savedGame) {
-        bottomLabel.textContent = playerData.squares[letter][index].type
-        player.squares[letter][index] = playerData.squares[letter][index]
-
-
-      } else {
-
-        bottomLabel.textContent = index === 0 ? 'Home' : 'None'
-        let newSquare = {
-          id: `${letter}${index}`,
-          type: index === 0 ? 'Home' : 'None'
-        }
-
-        // Add square to player object
-        player.squares[letter].push(newSquare)
-      }
-      square.addEventListener('click', () => {
-        openModal(square.id)
-      })
-    })
-  })
-
-  player.activeSquares.forEach((layer) => {
-    counter[layer] = 0;
-    squaresEl[layer][counter[layer]].style.backgroundColor = menuColor
-    squaresEl[layer][counter[layer]].style.border = `1px dashed darkgray`
-    squaresEl[layer][counter[layer]].style.color = 'white'
-
-    counter[layer]++
-
-    // setTimeout(() => {
-    //   runGameStep(layer)
-    // }, player.iterationSpeeds[layer])
-  })
-  player.activeSquares.reverse()
-}
 
 
 function drawGrid(size) {
@@ -513,13 +560,13 @@ function drawASquare(area, layer, count) {
 }
 
 
-document.addEventListener('click', function(event) { 
-  // Check if the click is outside the popup 
-  if (!cardModal.contains(event.target) && cardModal.style.display === 'block') { 
-    // If outside, close the popup 
-    openModal('close'); 
-  } 
-});
+// document.addEventListener('click', function(event) { 
+//   // Check if the click is outside the popup 
+//   if (!cardModal.contains(event.target) && cardModal.style.display === 'block') { 
+//     // If outside, close the popup 
+//     openModal('close'); 
+//   } 
+// });
 
 function openModal(id) {
   cardModal.style.display = id === 'close' ? 'none' : 'block';

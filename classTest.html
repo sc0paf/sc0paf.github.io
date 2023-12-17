@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script>
+    class Building {
+      constructor(type) {
+        this.type = type
+        this.amount = 1
+      }
+    }
+
+    class Generator extends Building {
+      constructor(type) {
+        super(type)
+        this.id = 'Generator'
+        this.description = 'Doubles amount generated.'
+        this.layerCostMod = 1.6
+        this.levelCostMod = 1.4
+        this.baseCost = 15
+        this.level = 1
+      }
+
+        
+    }
+  </script>
+</head>
+<body>
+  
+</body>
+</html>

@@ -22,7 +22,7 @@ let colorData = {
 
 const buildings = {
     Generator: {
-        name: 'Generator',
+        type: 'Generator',
         description: 'Generates $1.',
         cost: 5,
         upgrades: {
@@ -39,7 +39,7 @@ const buildings = {
         }
     },
     Multi: {
-        name: 'Multi',
+        type: 'Multi',
         description: 'Multiplies the next square.',
         cost: 10,
         upgrades: {
