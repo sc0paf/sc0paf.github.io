@@ -3,7 +3,7 @@ const gridContainer = document.getElementById('gridContainer');
 const cardModal = document.getElementById('cardContainer');
 const cardHeader = document.getElementById('cardHeader');
 const cardBody = document.getElementById('cardBody');
-let saveButton = document.getElementById('saveButton');
+const saveButton = document.getElementById('saveButton');
 let moneySpan, activeChargeBtn;
 
 
@@ -51,8 +51,12 @@ function startGame() {
         }
         if (thisObj.cName === 'Blank') {
          player.squares[layer][playerSquares] = new Blank(thisObj.id, thisObj.cName)
-        } else if (thisObj.cName === 'Generator') {
+        } 
+        if (thisObj.cName === 'Generator') {
           player.squares[layer][playerSquares] = new Generator(thisObj.id, thisObj.cName, '', thisObj.charges, thisObj.maxCharges, thisObj.amount, [thisObj.upgrades.generated, thisObj.upgrades.maxCharges])
+        } 
+        if (thisObj.cName === 'Charger') {
+          player.squares[layer][playerSquares] = new Charger(thisObj.id, thisObj.cName, '', [thisObj.upgrades.fastCharge, thisObj.upgrades.chargeAmt])
         }
       }
     }
@@ -265,7 +269,7 @@ function setPadding() {
   if (window.innerWidth > 600) {
     // Larger screens
     if (player.activeSquares.length < 2) {
-      gridContainer.style.padding = `15% 20%`;
+      gridContainer.style.padding = `0 25%`;
     } else if (player.activeSquares.length < 3) {
       gridContainer.style.padding = `5%`;
     }
@@ -493,8 +497,11 @@ function cardDraw(psquare) {
           let newCost = playerSquare.getBuildingCost(current.type, squareID.layer)
           player.money -= newCost
           moneySpan.textContent = player.money.toFixed(2)
-          
+          if (current.type === 'Generator') {
           player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, 5, 5, 2, [1, 1])
+          } else if (current.type === 'Charger') {
+            player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, [1, 1])
+          }
 
           cardDraw(psquare)
           let newBoardSquare = populateSquare(player.squares[squareID.layer][squareID.number])
@@ -508,7 +515,18 @@ function cardDraw(psquare) {
       cardBody.appendChild(buildingButton)
       
     }
-  } 
+  } else if (playerSquare.type === 'Charger') {
+    let chargerDescription = document.createElement('div')
+    chargerDescription.textContent = playerSquare.description
+    cardBody.appendChild(chargerDescription)
+    let newThing = document.createElement('button')
+    newThing.textContent = 'Aheu'
+    newThing.classList.add('cardButtons')
+    cardBody.appendChild(newThing)
+    newThing.addEventListener('click', () => {
+      playerSquare.getSurroundingSquares(squareID.layer)
+    }) 
+  }
 }
 
 
@@ -516,6 +534,12 @@ function saveMe() {
   let savePlayerData = JSON.stringify(player)
   localStorage.setItem('savedPlayerData', savePlayerData)
   console.log('Saving...')
+  saveButton.disabled = true
+  saveButton.textContent = 'Saving...'
+  setTimeout(() => {
+    saveButton.disabled = false
+    saveButton.textContent = 'Save'
+  },1000)
 }
 
 function kill() {

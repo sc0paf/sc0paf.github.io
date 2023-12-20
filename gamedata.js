@@ -4,7 +4,7 @@ class Blank {
         this.type = type
         this.availableBuildings = [
         {
-            type: 'Generator',
+            type: 'Generator',  
             typeClass: Generator,
             cost: 5,
             description: 'Generates $2.',
@@ -16,7 +16,8 @@ class Blank {
             cost: 15,
             description: 'Idk - multiplies something IG.',
             layerCostMod: 2.5
-        }]
+        }
+    ]
     }
 
     toJSON() {
@@ -51,6 +52,8 @@ class Blank {
 class Multi extends Blank {
 
 }
+
+
 
 
 class Home {
@@ -119,7 +122,7 @@ class Home {
         let layerMod = this.upgrades[upgradeID].layerCostMod
         let level = this.upgrades[upgradeID].level
 
-        return baseCost * (levelMod ** (level - 1))
+        return baseCost * (levelMod ** (level - 1)) * (layerMod ** layerNumb)
         // return this.upgrades[upgradeID].baseCost * (this.upgrades[upgradeID].levelCostMod ** (this.upgrades[upgradeID].level - 1)) * (this.upgrades[upgradeID].layerCostMod ** layerNumb)
     }
 
@@ -134,6 +137,64 @@ class Home {
         }
     }
 }
+
+class Charger extends Blank {
+    constructor(sID, type, element, upgrades) {
+        super(sID, type)
+        this.classType = Charger
+        this.element = element
+        this.cost = 25
+        this.chargeRate = 10000
+        this.description = `Charges surrounding blocks once every ${this.chargeRate} seconds`
+        this.chargeAmount = 1
+        this.upgrades = {
+            fastCharge: {
+                name: 'Faster Charging',
+                id: 'fastCharge',
+                description: 'Charges surrounding blocks faster.',
+                level: 1,
+                maxLevel: 5,
+                layerCostMod: 1.7,
+                levelCostMod: 1.5,
+                cost: 50
+            },
+            chargeAmt: {
+                name: 'Charge More',
+                id: 'chargeAmt',
+                description: 'Charges surrounding blocks at 1.5x rate.',
+                layerCostMod: 1.7,
+                levelCostMod: 1.5,
+                level: 1,
+                maxLevel: 5,
+                cost: 200
+            }
+        }
+
+    }
+    toJSON() {
+        return {
+            cName: 'Charger',
+            id: this.id,
+            upgrades: {
+                fastCharge: this.upgrades.fastCharge.level,
+                chargeAmt: this.upgrades.fastCharge.level
+            }
+        }
+    }
+
+    getSurroundingSquares(layer) {
+        let squid = this.id
+        let squareNum = squid.substring(1)
+        let layerLength = Object.keys(player.squares[layer]).length
+        let prevSquare = (squareNum - 1 + layerLength) % layerLength
+        let nextSquare = (squareNum + 1 + layerLength) % layerLength
+        if (player.squares[layer][prevSquare].type === 'Generator' && player.squares[layer][prevSquare].charges < player.squares[layer][prevSquare].maxCharges) {
+            player.squares[layer][prevSquare].charges++
+        }
+                console.log(`Previous: ${prevSquare} Next: ${nextSquare}`)
+
+    }
+  }
 
 
 class Generator extends Blank {
@@ -241,6 +302,7 @@ const classMap = {
     Blank,
     Generator,
     Multi,
+    Charger,
     Home
 }
 
