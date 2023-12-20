@@ -281,7 +281,7 @@ class Generator extends Blank {
             player.money -= this.getUpgradeCost(upgrade, layer)
             this.upgrades[upgrade].level++
             if (upgrade === 'generated') {
-                this.amount *= 2
+                this.amount += 2
             } else if (upgrade === 'maxCharges') {
                 this.charges += 2
                 this.maxCharges += 2
