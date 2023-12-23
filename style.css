@@ -182,6 +182,12 @@ html, body {
     background-image: url('assets/fullcoin.png');
 }
 
+.Multi {
+    width: 16px;
+    height: 16px;
+    background-image: url('assets/Multi.png');
+}
+
 .animate-rotation {
     animation: rotateCoin 1s steps(8) infinite;
 }

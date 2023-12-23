@@ -58,6 +58,9 @@ function startGame() {
         if (thisObj.cName === 'Charger') {
           player.squares[layer][playerSquares] = new Charger(thisObj.id, thisObj.cName, '', [thisObj.upgrades.fastCharge, thisObj.upgrades.chargeAmt, thisObj.upgrades.autoCharge])
         }
+        if (thisObj.cName === 'Multi') {
+          player.squares[layer][playerSquares] = new Multi(thisObj.id, thisObj.cName, '', thisObj.charges, thisObj.maxCharges, thisObj.amount, [thisObj.upgrades.multiAmt, thisObj.upgrades.multiRange, thisObj.upgrades.maxCharges, thisObj.upgrades.autoCharge])
+        }
       }
     }
 
@@ -110,6 +113,10 @@ function startGame() {
     clearTimeout(timers[layer])
     gameStep(layer)
   })
+}
+
+function cheat() {
+  player.money += 10000
 }
 
 
@@ -330,6 +337,9 @@ function populateSquare(playerSquare) {
     layerSpeedText.textContent = `${squareID.layer.charAt(0)} speed: ${(player.layerData[squareID.layer].iterationSpeeds/1000).toFixed(2)}/s`
     layerInfo.appendChild(layerSpeedText)
     returnSquare.appendChild(layerInfo)
+
+  } else if (playerSquare.type === 'Multi') {
+    
   }
 
   let squareTypeLabel = document.createElement('div')
@@ -504,7 +514,6 @@ function cardDraw(psquare) {
           } else if (current.type === 'Multi') {
             player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, 5, 5, 2)
           }
-
           cardDraw(psquare)
           let newBoardSquare = populateSquare(player.squares[squareID.layer][squareID.number])
           player.squares[squareID.layer][squareID.number].element.innerHTML = ''
@@ -626,6 +635,8 @@ function gameStep(layer) {
     let redraw = populateSquare(currentPlayerSquare)
     currentElement.appendChild(redraw)
     playMoneyAnimation(currentElement, currentPlayerSquare.amount)
+  } else if (currentPlayerSquare.type === 'Multi') {
+    console.log('multi stuff')
   }
 
 
