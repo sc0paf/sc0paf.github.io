@@ -11,10 +11,10 @@ class Blank {
             layerCostMod: 1.5
         }, 
         {
-            type: 'Multi (not implemented)',
+            type: 'Multi',
             typeClass: Multi,
             cost: 15,
-            description: 'Idk - multiplies something IG.',
+            description: 'Multipies generator after this square by 1.5',
             layerCostMod: 2.5
         }
     ]
@@ -50,7 +50,75 @@ class Blank {
 }
 
 class Multi extends Blank {
+    constructor(sID, type, element, charges, maxCharges, amount, upgrades = [1, 1]) {
+        super (sID, type)
 
+        this.classType = Multi
+        this.element = element
+        this.amount = amount
+        this.cost = 80
+        this.description = `Multiplies generators before and after this building by 1.5`
+        this.chargeAmount = 1
+        this.charges = charges;
+        this.maxCharges = maxCharges
+        this.upgrades = {
+            multiAmt: {
+                name: 'Multiplier Amount',
+                id: 'multiAmt',
+                description: 'Increases multiplier amount',
+                layerCostMod: 1.6,
+                levelCostMod: 1.4,
+                cost: 100,
+                level: upgrades[0],
+                maxLevel: 3
+            },
+            multiRange: {
+                name: 'Multiplier Range',
+                id: 'multiRange',
+                description: 'Extends multiplier range by 1 extra square (back, fwd, back)',
+                layerCostMod: 1.8,
+                levelCostMod: 1.6,
+                cost: 1000,
+                level: upgrades[1],
+                maxLevel: 3
+            },
+            maxCharges: {
+                name: 'Max Charges',
+                id: 'maxCharges',
+                description: 'Increases the maximum charges for this Generator.',
+                layerCostMod: 1.6,
+                levelCostMod: 1.4,
+                cost: 200,
+                level: upgrades[1],
+                maxLevel: 20
+            },
+            autoCharge: {
+                name: 'Auto Charge',
+                id: 'autoCharge',
+                description: 'Automatically charges this square (1000ms (*.9 per level beyond 1))',
+                layerCostMod: 1.8,
+                levelCostMod: 1.4,
+                cost: 800,
+                level: upgrades[2],
+                maxLevel: 10
+            }
+        }
+    }
+    toJSON() {
+        return {
+            cName: 'Multi',
+            charges: this.charges,
+            id: this.id,
+            amount: this.amount,
+            maxCharges: this.maxCharges,
+            upgrades: {
+                multiAmt: this.multiAmt,
+                multiRange: this.multiRange,
+                maxCharges: this.maxCharges,
+                autoCharge: this.autoCharge
+            }
+        }
+    }
 }
 
 
@@ -139,7 +207,7 @@ class Home {
 }
 
 class Charger extends Blank {
-    constructor(sID, type, element, upgrades) {
+    constructor(sID, type, element, upgrades = [1, 1]) {
         super(sID, type)
         this.classType = Charger
         this.element = element
@@ -194,11 +262,11 @@ class Charger extends Blank {
                 console.log(`Previous: ${prevSquare} Next: ${nextSquare}`)
 
     }
-  }
+}
 
 
 class Generator extends Blank {
-    constructor(sID, type, element, charges, maxCharges, amount, upgrades) {
+    constructor(sID, type, element, charges, maxCharges, amount, upgrades = [1, 1, 1]) {
         super(sID, type)
         this.classType = Generator
         this.element = element
@@ -209,6 +277,8 @@ class Generator extends Blank {
         this.layerCostMod = 1.75;
         this.amount = amount;
         this.chargeAmt = 1;
+        this.chargeInterval = null;
+        this.chargeIntervalTimer = 10000;
         this.upgrades = {
             generated: {
                 name: 'Amount Generated',
@@ -229,6 +299,16 @@ class Generator extends Blank {
                 cost: 20,
                 level: upgrades[1],
                 maxLevel: 20
+            },
+            autoCharge: {
+                name: 'Auto Charge',
+                id: 'autoCharge',
+                description: 'Automatically charges this square (1 / 10s)',
+                layerCostMod: 1.8,
+                levelCostMod: 1.4,
+                cost: 150,
+                level: upgrades[2],
+                maxLevel: 10
             }
         }
     }
@@ -242,7 +322,8 @@ class Generator extends Blank {
             amount: this.amount,
             upgrades: {
                 generated: this.upgrades.generated.level,
-                maxCharges: this.upgrades.maxCharges.level
+                maxCharges: this.upgrades.maxCharges.level,
+                autoCharge: this.upgrades.autoCharge.level
             }
         }
     }
@@ -285,6 +366,20 @@ class Generator extends Blank {
             } else if (upgrade === 'maxCharges') {
                 this.charges += 2
                 this.maxCharges += 2
+            } else if (upgrade === 'autoCharge') {
+                if (this.upgrades[upgrade].level > 1) {
+                    this.chargeIntervalTimer *= .9
+                }
+                clearInterval(this.chargeInterval)
+                this.chargeInterval = setInterval(() => {
+                    if (this.charges < this.maxCharges) {
+                        this.charges++
+                        this.element.innerHTML = ''
+                        let redraw = populateSquare(this)
+                        this.element.appendChild(redraw)
+                    }
+                }, this.chargeIntervalTimer)
+                console.log('autocharging at rate ' + this.chargeIntervalTimer)
             }
         }
     }

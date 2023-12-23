@@ -56,7 +56,7 @@ function startGame() {
           player.squares[layer][playerSquares] = new Generator(thisObj.id, thisObj.cName, '', thisObj.charges, thisObj.maxCharges, thisObj.amount, [thisObj.upgrades.generated, thisObj.upgrades.maxCharges])
         } 
         if (thisObj.cName === 'Charger') {
-          player.squares[layer][playerSquares] = new Charger(thisObj.id, thisObj.cName, '', [thisObj.upgrades.fastCharge, thisObj.upgrades.chargeAmt])
+          player.squares[layer][playerSquares] = new Charger(thisObj.id, thisObj.cName, '', [thisObj.upgrades.fastCharge, thisObj.upgrades.chargeAmt, thisObj.upgrades.autoCharge])
         }
       }
     }
@@ -498,9 +498,11 @@ function cardDraw(psquare) {
           player.money -= newCost
           moneySpan.textContent = player.money.toFixed(2)
           if (current.type === 'Generator') {
-          player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, 5, 5, 2, [1, 1])
+          player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, 5, 5, 2)
           } else if (current.type === 'Charger') {
             player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, [1, 1])
+          } else if (current.type === 'Multi') {
+            player.squares[squareID.layer][squareID.number] = new newBuilding(psquare, current.type, playerSquare.element, 5, 5, 2)
           }
 
           cardDraw(psquare)

@@ -894,3 +894,49 @@ function buyUpgrade(layer, squareId, upgrade, upgradeButton) {
     event.stopPropagation();
   }
 }
+
+
+
+
+function makeASquare(area, id, letter, number) {
+  let newSquare = document.createElement('div')
+  newSquare.classList.add('grid-item')
+  newSquare.style.gridArea = area
+  newSquare.id = id
+
+  let cDiv = document.createElement('div')
+  
+  let squareIdLabel = document.createElement('span')
+  squareIdLabel.style.margin = '0 0 auto auto'
+  squareIdLabel.style.color = secondaryTextColor
+  squareIdLabel.textContent = id.charAt(1) === '0' ? `[${id.charAt(0).toUpperCase()}]` : `[${id}]`
+  newSquare.appendChild(squareIdLabel)
+  let newPlayerSquare = {
+      id: id,
+      type: id.charAt(1) === '0' ? 'Home' : 'None'
+  }
+  player.squares[letter].push(newPlayerSquare)
+  squaresEl[letter].push(newSquare)
+  if (id.charAt(1) === '0') {
+      newSquare.classList.add('homeShop')
+      let layerInfo = document.createElement('div')
+      layerInfo.textContent = `a speed: ${player.iterationSpeeds[letter]}`
+      layerInfo.style.color = secondaryTextColor
+      let layerUpgradesText = document.createElement('div')
+      layerUpgradesText.textContent = `Upgrades`
+      layerUpgradesText.style.color = primaryTextColor
+      newSquare.appendChild(layerInfo)
+      newSquare.appendChild(layerUpgradesText)
+      newSquare.appendChild(document.createElement('br'))
+  } else {
+      newSquare.classList.add('active')
+      newSquare.addEventListener('click', () => {
+          selectSquare(letter, id)
+      })
+  }
+  let cSpan = document.createElement('span')
+  cSpan.style.color = secondaryTextColor;
+  cSpan.textContent = squareType(newPlayerSquare.type)
+  newSquare.appendChild(cSpan)
+  return newSquare    
+}
