@@ -1,15 +1,25 @@
 import { Canvas, drawBG } from './draw.js';
-import { initMergeBoard, drawMergeBoard, addMergeable } from './Merge.js';
+import { initMergeBoard, drawMergeBoard, addMergeable, saveMergeBoard, mergeValue } from './Merge.js';
 import { player } from './player.js';
 const canvasElement = document.getElementById('main-canvas');
 let canvas;
 const progress = document.getElementById('progress-bar');
 let fpsDisplay = document.getElementById('fps-display');
+// let savebutton = document.getElementById('save-button') as HTMLButtonElement;
+let resetbutton = document.getElementById('reset-button');
+let moneyDisplay = document.getElementById('money');
 let spawner = 0;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('dom fired');
     canvas = new Canvas(canvasElement);
     initMergeBoard(canvas);
+    resetbutton.addEventListener('click', () => {
+        localStorage.removeItem('mergeSlots');
+        location.reload();
+    });
+    setInterval(() => {
+        saveMergeBoard();
+    }, 5000);
     requestAnimationFrame(gameloop);
 });
 let lastTime = 0;
@@ -30,9 +40,10 @@ const gameloop = (ts) => {
         fpsDisplay.innerText = `FPS: ${fps.toFixed(2)}`;
     }
     player.playtime += delta;
-    // loop me
-    drawBG(canvas);
+    player.money += mergeValue * delta;
     spawner += delta;
+    drawBG(canvas);
+    moneyDisplay.innerText = `Money: ${player.money.toFixed(2)}`;
     drawMergeBoard(canvas);
     progress.style.width = Math.min(Math.max(spawner / player.spawnRate, 0), 1) * 100 + '%';
     if (spawner >= player.spawnRate) {

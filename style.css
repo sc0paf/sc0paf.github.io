@@ -14,6 +14,23 @@
 	border: 1px solid white;
 }
 
+.footer {
+	width: 800px;
+	margin: 0 auto;
+	height: 15px;
+	background-color: #ccc;
+	border: 1px solid white;
+	display: flex;
+	justify-content: space-between;
+}
+
+button {
+	background-color: var(--main-highlight-color);
+	color: var(--main-text-color);
+	border: none;
+	cursor: pointer;
+}
+
 #progress-bar {
 	height: 100%;
 	background-color: var(--main-highlight-color);

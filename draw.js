@@ -1,4 +1,4 @@
-import { getMergeableAtPos, getSlotAtPos, mergeable } from "./Merge.js";
+import { getMergeableAtPos, getSlotAtPos, mergeable, incrementMergeValue } from "./Merge.js";
 // draw.ts
 export class Canvas {
     canvas;
@@ -72,16 +72,38 @@ export class Canvas {
                     this.draggingMergeable.parent = slot;
                 }
                 else if (slot && slot.contents) {
+                    // can merge
                     if (this.draggingMergeable.level === slot.contents.level && this.draggingMergeable !== slot.contents) {
                         if (this.draggingMergeable.parent) {
                             this.draggingMergeable.parent.contents = null;
                         }
                         slot.contents = new mergeable(this.draggingMergeable.value * 3, slot.x, slot.y, this.draggingMergeable.level + 1, slot);
+                        incrementMergeValue(-(this.draggingMergeable.value * 2));
+                        incrementMergeValue(this.draggingMergeable.value * 3);
                     }
-                    this.draggingMergeable.x = this.draggingMergeable.parent.x;
-                    this.draggingMergeable.y = this.draggingMergeable.parent.y;
+                    else if (this.draggingMergeable.level !== slot.contents.level && this.draggingMergeable !== slot.contents) {
+                        const targetMergeable = slot.contents;
+                        const fromSlot = this.draggingMergeable.parent;
+                        const toSlot = slot;
+                        if (fromSlot && toSlot) {
+                            this.draggingMergeable.x = toSlot.x;
+                            this.draggingMergeable.y = toSlot.y;
+                            targetMergeable.x = fromSlot.x;
+                            targetMergeable.y = fromSlot.y;
+                            this.draggingMergeable.parent = toSlot;
+                            targetMergeable.parent = fromSlot;
+                            toSlot.contents = this.draggingMergeable;
+                            fromSlot.contents = targetMergeable;
+                        }
+                    }
+                    else {
+                        // cant swap or merge
+                        this.draggingMergeable.x = this.draggingMergeable.parent.x;
+                        this.draggingMergeable.y = this.draggingMergeable.parent.y;
+                    }
                 }
                 else {
+                    // not valid position
                     this.draggingMergeable.x = this.draggingMergeable.parent.x;
                     this.draggingMergeable.y = this.draggingMergeable.parent.y;
                 }

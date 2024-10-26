@@ -1,4 +1,5 @@
 export const player = {
-    spawnRate: 6,
-    playtime: 0
+	spawnRate: 4,
+	playtime: 0,
+	money: 0
 };
